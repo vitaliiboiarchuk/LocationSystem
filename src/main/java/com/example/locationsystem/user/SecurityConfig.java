@@ -1,4 +1,4 @@
-package com.example.locationsystem.admin;
+package com.example.locationsystem.user;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
