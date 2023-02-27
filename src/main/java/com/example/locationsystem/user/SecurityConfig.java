@@ -25,7 +25,7 @@ public class SecurityConfig {
     @Bean
     protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests()
-                .requestMatchers("/**").permitAll()
+                .requestMatchers("/**").authenticated()
                 .and().formLogin();
         return http.build();
     }
