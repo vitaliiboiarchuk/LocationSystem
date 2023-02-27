@@ -1,8 +1,11 @@
 package com.example.locationsystem.user;
 
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class UserController {
@@ -22,4 +25,40 @@ public class UserController {
         userService.saveUser(user);
         return "user created";
     }
+
+    @GetMapping("/registration")
+    public String registration(Model model) {
+        model.addAttribute("user",new User());
+        return "registration";
+    }
+
+
+    @PostMapping("/registration")
+    public String registrationPost(@Valid User user, BindingResult bindingResult, Model model) {
+        User userExists = userService.findByUserName(user.getEmail());
+        if (userExists != null) {
+            bindingResult.rejectValue("username", "error.user",
+                    "Użytkownik z taką nazwą już istnieje");
+        }
+
+        if (user.getName().isEmpty()) {
+            bindingResult.rejectValue("name","error.user","Pole nie może być puste!");
+        }
+
+        if (user.getEmail().isEmpty()) {
+            bindingResult.rejectValue("email","error.user","Pole nie może być puste!");
+        }
+        if (user.getPassword().isEmpty()) {
+            bindingResult.rejectValue("password","error.user","Pole nie może być puste!");
+        }
+
+        if (bindingResult.hasErrors()) {
+            return "registration";
+        } else {
+            userService.saveUser(user);
+            model.addAttribute("user",user.getEmail());
+            return "redirect:/login";
+        }
+    }
+
 }

@@ -20,6 +20,8 @@ public class User {
     @Column(nullable = false, unique = true, length = 60)
     private String email;
 
+    private String name;
+
     private String password;
 
     private int enabled;
