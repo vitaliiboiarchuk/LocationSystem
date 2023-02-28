@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
-@Secured("ROLE_USER")
 public class LocationController {
 
     private final UserRepository userRepository;
@@ -24,7 +23,7 @@ public class LocationController {
         this.locationRepository = locationRepository;
     }
 
-
+    @Secured("ROLE_USER")
     @GetMapping("/addLocation")
     public String addLocation(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
         User entityUser = currentUser.getUser();
@@ -33,6 +32,7 @@ public class LocationController {
         return "addLocation";
     }
 
+    @Secured("ROLE_USER")
     @PostMapping("/addLocation")
     public String addLocation(@AuthenticationPrincipal CurrentUser currentUser, @Valid Location location, BindingResult result, Model model) {
         User entityUser = currentUser.getUser();
@@ -44,6 +44,7 @@ public class LocationController {
         return "redirect:/";
     }
 
+    @Secured("ROLE_USER")
     @GetMapping("/myLocations")
     public String myLocations(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
         User entityUser = currentUser.getUser();
