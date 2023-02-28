@@ -1,10 +1,12 @@
 package com.example.locationsystem.user;
 
 
+import com.example.locationsystem.location.Location;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 
@@ -23,6 +25,12 @@ public class User {
     private String name;
 
     private String password;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    private List<Location> readOnlyLocations;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    private List<Location> adminLocations;
 
     private int enabled;
 

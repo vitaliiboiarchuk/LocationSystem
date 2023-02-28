@@ -13,6 +13,7 @@
 </head>
 <body>
 
+<h3>Added locations</h3>
 <table class="table">
     <thead>
     <tr>
@@ -25,13 +26,36 @@
         <tr>
             <td>${location.name}</td>
             <td>${location.address}</td>
-            <td>
-                <a href="<c:url value="/showMyLocation/${location.id}/"/>">Show</a>
-            </td>
         </tr>
     </c:forEach>
     </tbody>
 </table>
-
+<h3>Shared locations from friends</h3>
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Address</th>
+    </tr>
+    </thead>
+    <tbody>
+    <c:forEach items="${readOnlyLocations}" var="readOnlyLocation">
+        <tr>
+            <td>${readOnlyLocation.name}</td>
+            <td>${readOnlyLocation.address}</td>
+            <td>(Read only access)</td>
+        </tr>
+    </c:forEach>
+    <c:forEach items="${adminLocations}" var="adminLocation">
+        <tr>
+            <td>${adminLocation.name}</td>
+            <td>${adminLocation.address}</td>
+            <td>(Admin access)</td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<br>
+<a href="/shareLocation">Share location</a></p>
 </body>
 </html>
