@@ -19,7 +19,7 @@
 </sec:authorize>
 <sec:authorize access="isAuthenticated()">
     <h1>My profile</h1>
-    <a href="/">My location</a></p>
+    <a href="/myLocations">My locations</a></p>
     <a href="/addLocation">Add location</a></p>
 </sec:authorize>
 </body>

@@ -43,4 +43,11 @@ public class LocationController {
         locationRepository.save(location);
         return "redirect:/";
     }
+
+    @GetMapping("/myLocations")
+    public String myLocations(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
+        User entityUser = currentUser.getUser();
+        model.addAttribute("locations",locationRepository.findAllMyLocations(entityUser.getId()));
+        return "myLocations";
+    }
 }
