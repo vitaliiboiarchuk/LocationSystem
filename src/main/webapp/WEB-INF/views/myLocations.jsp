@@ -39,10 +39,16 @@
     </tr>
     </thead>
     <tbody>
-    <c:forEach items="${sharedLocations}" var="location">
+    <c:forEach items="${readOnlyLocations}" var="readOnlyLocation">
         <tr>
-            <td>${location.name}</td>
-            <td>${location.address}</td>
+            <td>${readOnlyLocation.name}</td>
+            <td>${readOnlyLocation.address}</td>
+        </tr>
+    </c:forEach>
+    <c:forEach items="${adminLocations}" var="adminLocation">
+        <tr>
+            <td>${adminLocation.name}</td>
+            <td>${adminLocation.address}</td>
         </tr>
     </c:forEach>
     </tbody>

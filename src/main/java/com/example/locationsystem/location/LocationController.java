@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Stream;
+
 @Controller
 @Secured("ROLE_USER")
 public class LocationController {
@@ -48,7 +52,8 @@ public class LocationController {
     public String myLocations(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
         User entityUser = currentUser.getUser();
         model.addAttribute("locations",locationRepository.findAllMyLocations(entityUser.getId()));
-        model.addAttribute("sharedLocations",locationRepository.findAllMyReadOnlyLocations(entityUser.getId()));
+        model.addAttribute("readOnlyLocations",locationRepository.findAllMyReadOnlyLocations(entityUser.getId()));
+        model.addAttribute("adminLocations",locationRepository.findAllMyAdminLocations(entityUser.getId()));
         return "myLocations";
     }
 
@@ -62,12 +67,32 @@ public class LocationController {
     public String shareReadOnly(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable long id, Model model) {
         User entityUser = currentUser.getUser();
         model.addAttribute("user",userRepository.getReferenceById(id));
-        model.addAttribute("locations",locationRepository.findAllMyLocations(entityUser.getId()));
+        List<Location> allMyLocations = locationRepository.findAllMyLocations(entityUser.getId());
+        List<Location> allMyAdminLocations = locationRepository.findAllMyAdminLocations(entityUser.getId());
+        List<Location> forAdminAccess = Stream.of(allMyLocations, allMyAdminLocations).flatMap(Collection::stream).toList();
+        model.addAttribute("locations",forAdminAccess);
         return "shareReadOnly";
     }
 
     @PostMapping("/shareReadOnly")
     public String shareReadOnly(@Valid User user) {
+        userRepository.save(user);
+        return "redirect:/";
+    }
+
+    @GetMapping("/shareAdmin/{id}/")
+    public String shareAdmin(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable long id, Model model) {
+        User entityUser = currentUser.getUser();
+        model.addAttribute("user",userRepository.getReferenceById(id));
+        List<Location> allMyLocations = locationRepository.findAllMyLocations(entityUser.getId());
+        List<Location> allMyAdminLocations = locationRepository.findAllMyAdminLocations(entityUser.getId());
+        List<Location> forAdminAccess = Stream.of(allMyLocations, allMyAdminLocations).flatMap(Collection::stream).toList();
+        model.addAttribute("locations",forAdminAccess);
+        return "shareAdmin";
+    }
+
+    @PostMapping("/shareAdmin")
+    public String shareAdmin(@Valid User user) {
         userRepository.save(user);
         return "redirect:/";
     }
