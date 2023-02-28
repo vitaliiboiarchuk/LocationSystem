@@ -13,6 +13,7 @@
 </head>
 <body>
 
+<h3>My locations</h3>
 <table class="table">
     <thead>
     <tr>
@@ -22,6 +23,23 @@
     </thead>
     <tbody>
     <c:forEach items="${locations}" var="location">
+        <tr>
+            <td>${location.name}</td>
+            <td>${location.address}</td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+<h3>Shared locations</h3>
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Address</th>
+    </tr>
+    </thead>
+    <tbody>
+    <c:forEach items="${sharedLocations}" var="location">
         <tr>
             <td>${location.name}</td>
             <td>${location.address}</td>

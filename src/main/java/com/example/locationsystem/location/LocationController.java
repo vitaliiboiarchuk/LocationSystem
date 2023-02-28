@@ -48,6 +48,7 @@ public class LocationController {
     public String myLocations(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
         User entityUser = currentUser.getUser();
         model.addAttribute("locations",locationRepository.findAllMyLocations(entityUser.getId()));
+        model.addAttribute("sharedLocations",locationRepository.findAllMyReadOnlyLocations(entityUser.getId()));
         return "myLocations";
     }
 
