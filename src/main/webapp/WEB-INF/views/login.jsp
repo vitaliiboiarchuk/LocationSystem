@@ -18,9 +18,11 @@
 
 <form:form method="post" modelAttribute="user">
 
+    Email:
     <form:input path="username" type="email"/>
     <form:errors path="username" class="alert alert-danger"/>
 
+    Password:
     <form:input path="password" type="password"/>
     <form:errors path="password" class="alert alert-danger"/>
 
