@@ -13,6 +13,8 @@
 </head>
 <body>
 
+<h3>Chose with whom you want to share with</h3>
+
 <table class="table">
     <thead>
     <tr>
