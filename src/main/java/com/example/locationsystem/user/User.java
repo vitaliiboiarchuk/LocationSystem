@@ -1,6 +1,7 @@
 package com.example.locationsystem.user;
 
 
+import com.example.locationsystem.location.Location;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,9 @@ public class User {
     private String name;
 
     private String password;
+
+    @ManyToOne
+    private Location readOnlyLocation;
 
     private int enabled;
 

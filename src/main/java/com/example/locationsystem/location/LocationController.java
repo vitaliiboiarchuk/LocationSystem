@@ -51,4 +51,11 @@ public class LocationController {
         model.addAttribute("locations",locationRepository.findAllMyLocations(entityUser.getId()));
         return "myLocations";
     }
+
+    @Secured("ROLE_USER")
+    @GetMapping("/shareLocation")
+    public String shareReadOnly(Model model) {
+        model.addAttribute("users",userRepository.findAll());
+        return "shareLocation";
+    }
 }

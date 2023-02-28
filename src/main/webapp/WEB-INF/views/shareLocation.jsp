@@ -3,7 +3,7 @@
   Created by IntelliJ IDEA.
   User: boyar
   Date: 28/02/2023
-  Time: 12:25
+  Time: 13:44
   To change this template use File | Settings | File Templates.
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -17,19 +17,22 @@
     <thead>
     <tr>
         <th scope="col">Name</th>
-        <th scope="col">Address</th>
+        <th scope="col">Email</th>
     </tr>
     </thead>
     <tbody>
-    <c:forEach items="${locations}" var="location">
+    <c:forEach items="${users}" var="user">
         <tr>
-            <td>${location.name}</td>
-            <td>${location.address}</td>
+            <th scope="row">${user.name}</th>
+            <td>${user.username}</td>
+            <td>
+                <a href="<c:url value="/shareReadOnly/${user.id}/"/>">Share read only</a>
+                <a href="<c:url value="/shareAdmin/${user.id}/"/>">Share admin</a>
+            </td>
         </tr>
     </c:forEach>
     </tbody>
 </table>
-<br>
-<a href="/shareLocation">Share location</a></p>
+
 </body>
 </html>
