@@ -1,3 +1,4 @@
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%--
   Created by IntelliJ IDEA.
   User: boyar
@@ -11,8 +12,15 @@
     <title>Title</title>
 </head>
 <body>
+<sec:authorize access="isAnonymous()">
 <h1>Welcome!</h1>
 <a href="/registration">Create an account</a></p>
 <a href="/login">Login</a></p>
+</sec:authorize>
+<sec:authorize access="isAuthenticated()">
+    <h1>My profile</h1>
+    <a href="/">My location</a></p>
+    <a href="/">Add location</a></p>
+</sec:authorize>
 </body>
 </html>
