@@ -27,8 +27,8 @@
 
     Email:
 
-    <form:input path="email" type="email"/>
-    <form:errors path="email" class="alert alert-danger"/>
+    <form:input path="username" type="email"/>
+    <form:errors path="username" class="alert alert-danger"/>
 
     <input type="submit" value="Create Account"></input>
 

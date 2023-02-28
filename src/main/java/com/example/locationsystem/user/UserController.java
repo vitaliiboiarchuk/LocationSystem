@@ -20,7 +20,7 @@ public class UserController {
     @ResponseBody
     public String createUser() {
         User user = new User();
-        user.setEmail("user");
+        user.setUsername("user");
         user.setPassword("user");
         userService.saveUser(user);
         return "user created";
@@ -35,7 +35,7 @@ public class UserController {
 
     @PostMapping("/registration")
     public String registrationPost(@Valid User user, BindingResult bindingResult, Model model) {
-        User userExists = userService.findByUserName(user.getEmail());
+        User userExists = userService.findByUserName(user.getUsername());
         if (userExists != null) {
             bindingResult.rejectValue("username", "error.user",
                     "Użytkownik z taką nazwą już istnieje");
@@ -45,7 +45,7 @@ public class UserController {
             bindingResult.rejectValue("name","error.user","Pole nie może być puste!");
         }
 
-        if (user.getEmail().isEmpty()) {
+        if (user.getUsername().isEmpty()) {
             bindingResult.rejectValue("email","error.user","Pole nie może być puste!");
         }
         if (user.getPassword().isEmpty()) {
@@ -56,9 +56,14 @@ public class UserController {
             return "registration";
         } else {
             userService.saveUser(user);
-            model.addAttribute("user",user.getEmail());
             return "redirect:/login";
         }
+    }
+
+    @GetMapping("/login")
+    public String login(@Valid User user, Model model) {
+        model.addAttribute("user",user);
+        return "login";
     }
 
 }

@@ -26,8 +26,8 @@ public class SecurityConfig {
     protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests()
                 .requestMatchers("/**").permitAll()
-                .requestMatchers("/**").permitAll()
-                .and().formLogin();
+                .and().formLogin().loginPage("/login")
+                .and().logout().logoutSuccessUrl("/");
         return http.build();
     }
 }
