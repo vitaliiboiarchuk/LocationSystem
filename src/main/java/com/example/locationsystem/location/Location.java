@@ -1,16 +1,16 @@
 package com.example.locationsystem.location;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.example.locationsystem.user.User;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
+
 @Entity
 @Setter
 @Getter
+@Table(name = "locations")
 public class Location {
 
     @Id
@@ -22,4 +22,7 @@ public class Location {
 
     @NotBlank
     private String address;
+
+    @ManyToOne
+    private User user;
 }
