@@ -30,8 +30,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests()
                 .requestMatchers("/**").permitAll()
                 .and().formLogin().loginPage("/login")
-                .and().logout().logoutSuccessUrl("/")
-                .permitAll();
+                .and().logout().logoutSuccessUrl("/");
         return http.build();
     }
 }

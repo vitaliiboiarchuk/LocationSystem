@@ -1,4 +1,5 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%--
   Created by IntelliJ IDEA.
   User: boyar
@@ -21,6 +22,10 @@
     <h1>My profile</h1>
     <a href="/myLocations">My locations</a></p>
     <a href="/addLocation">Add location</a></p>
+    <form action="<c:url value="/logout"/>" method="post">
+        <input type="submit" value="Log Out">
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+    </form>
 </sec:authorize>
 </body>
 </html>
