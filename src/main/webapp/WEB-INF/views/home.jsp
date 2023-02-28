@@ -12,5 +12,7 @@
 </head>
 <body>
 <h1>Welcome!</h1>
+<a href="/registration">Create an account</a></p>
+<a href="/login">Login</a></p>
 </body>
 </html>

@@ -5,7 +5,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class UserController {
@@ -16,15 +15,6 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/create-user")
-    @ResponseBody
-    public String createUser() {
-        User user = new User();
-        user.setUsername("user");
-        user.setPassword("user");
-        userService.saveUser(user);
-        return "user created";
-    }
 
     @GetMapping("/registration")
     public String registration(Model model) {
