@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 
@@ -25,11 +26,11 @@ public class User {
 
     private String password;
 
-    @ManyToOne
-    private Location readOnlyLocation;
+    @ManyToMany(fetch = FetchType.EAGER)
+    private List<Location> readOnlyLocations;
 
-    @ManyToOne
-    private Location adminLocation;
+    @ManyToMany(fetch = FetchType.EAGER)
+    private List<Location> adminLocations;
 
     private int enabled;
 

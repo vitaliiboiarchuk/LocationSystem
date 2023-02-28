@@ -9,10 +9,10 @@ import java.util.List;
 @Repository
 public interface LocationRepository extends JpaRepository<Location, Integer> {
 
-    @Query("select u.readOnlyLocation from User u where u.id = ?1")
+    @Query("select u.readOnlyLocations from User u where u.id = ?1")
     List<Location> findAllMyReadOnlyLocations(Long id);
 
-    @Query("select u.adminLocation from User u where u.id = ?1")
+    @Query("select u.adminLocations from User u where u.id = ?1")
     List<Location> findAllMyAdminLocations(Long id);
 
     @Query("select l from Location l where l.user.id = ?1")

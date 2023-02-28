@@ -24,7 +24,7 @@
 
     <h3>Choose location that you want to share</h3>
 
-    <form:select path="readOnlyLocation.id" items="${locations}"
+    <form:checkboxes path="readOnlyLocations" items="${locations}"
                  itemValue="id" itemLabel="name"/>
 
     <input type="submit" value="Submit"></input>

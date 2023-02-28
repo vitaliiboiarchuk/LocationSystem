@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Controller
@@ -67,11 +68,13 @@ public class LocationController {
     @GetMapping("/shareReadOnly/{id}/")
     public String shareReadOnly(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable long id, Model model) {
         User entityUser = currentUser.getUser();
-        model.addAttribute("user",userRepository.getReferenceById(id));
+        User user = userRepository.getReferenceById(id);
+        model.addAttribute("user",user);
         List<Location> allMyLocations = locationRepository.findAllMyLocations(entityUser.getId());
         List<Location> allMyAdminLocations = locationRepository.findAllMyAdminLocations(entityUser.getId());
-        List<Location> forAdminAccess = Stream.of(allMyLocations, allMyAdminLocations).flatMap(Collection::stream).toList();
-        model.addAttribute("locations",forAdminAccess);
+        List<Location> locations = Stream.of(allMyLocations, allMyAdminLocations).flatMap(Collection::stream).collect(Collectors.toList());
+        locations.removeIf(location -> user.getAdminLocations().contains(location) || user.getReadOnlyLocations().contains(location) || location.getUser().equals(user));
+        model.addAttribute("locations",locations);
         return "shareReadOnly";
     }
 
@@ -84,11 +87,13 @@ public class LocationController {
     @GetMapping("/shareAdmin/{id}/")
     public String shareAdmin(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable long id, Model model) {
         User entityUser = currentUser.getUser();
-        model.addAttribute("user",userRepository.getReferenceById(id));
+        User user = userRepository.getReferenceById(id);
+        model.addAttribute("user",user);
         List<Location> allMyLocations = locationRepository.findAllMyLocations(entityUser.getId());
         List<Location> allMyAdminLocations = locationRepository.findAllMyAdminLocations(entityUser.getId());
-        List<Location> forAdminAccess = Stream.of(allMyLocations, allMyAdminLocations).flatMap(Collection::stream).toList();
-        model.addAttribute("locations",forAdminAccess);
+        List<Location> locations = Stream.of(allMyLocations, allMyAdminLocations).flatMap(Collection::stream).collect(Collectors.toList());
+        locations.removeIf(location -> user.getAdminLocations().contains(location) || user.getReadOnlyLocations().contains(location) || location.getUser().equals(user));
+        model.addAttribute("locations",locations);
         return "shareAdmin";
     }
 

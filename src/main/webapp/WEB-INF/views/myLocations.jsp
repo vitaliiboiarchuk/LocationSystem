@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<h3>My locations</h3>
+<h3>Added locations</h3>
 <table class="table">
     <thead>
     <tr>
@@ -30,7 +30,7 @@
     </c:forEach>
     </tbody>
 </table>
-<h3>Shared locations</h3>
+<h3>Shared locations from friends</h3>
 <table class="table">
     <thead>
     <tr>
@@ -43,12 +43,14 @@
         <tr>
             <td>${readOnlyLocation.name}</td>
             <td>${readOnlyLocation.address}</td>
+            <td>(Read only access)</td>
         </tr>
     </c:forEach>
     <c:forEach items="${adminLocations}" var="adminLocation">
         <tr>
             <td>${adminLocation.name}</td>
             <td>${adminLocation.address}</td>
+            <td>(Admin access)</td>
         </tr>
     </c:forEach>
     </tbody>
