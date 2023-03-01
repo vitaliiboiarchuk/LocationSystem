@@ -3,6 +3,7 @@ package com.example.locationsystem.location;
 import com.example.locationsystem.user.CurrentUser;
 import com.example.locationsystem.user.User;
 import com.example.locationsystem.user.UserRepository;
+import com.oracle.wls.shaded.org.apache.xpath.operations.Mod;
 import jakarta.validation.Valid;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -66,9 +67,31 @@ public class LocationController {
 
     @GetMapping("/showFriends/{id}/")
     public String showFriends(@PathVariable Integer id, Model model) {
-        model.addAttribute("readOnlyUsers",userRepository.findAllReadOnlyFriendsOnLocation(locationRepository.getReferenceById(id)));
-        model.addAttribute("adminUsers",userRepository.findAllAdminFriendsOnLocation(locationRepository.getReferenceById(id)));
+        Location location = locationRepository.getReferenceById(id);
+        model.addAttribute("location",location);
+        model.addAttribute("readOnlyUsers",userRepository.findAllReadOnlyFriendsOnLocation(location));
+        model.addAttribute("adminUsers",userRepository.findAllAdminFriendsOnLocation(location));
         return "showFriends";
+    }
+
+    @GetMapping("/changeAccess/{locationId}/{userId}/")
+    public String changeAccess(@PathVariable Integer locationId, @PathVariable Long userId, Model model) {
+        User user = userRepository.getReferenceById(userId);
+        Location location = locationRepository.getReferenceById(locationId);
+        model.addAttribute("location",location);
+        model.addAttribute("user",user);
+        if (user.getReadOnlyLocations().contains(location)) {
+            model.addAttribute("showAdminLocations",true);
+        } else if (user.getAdminLocations().contains(location)) {
+            model.addAttribute("showReadOnlyLocations",true);
+        }
+        return "changeAccess";
+    }
+
+    @PostMapping("/changeAccess")
+    public String changeAccess(@Valid User user) {
+        userRepository.save(user);
+        return "redirect:/myLocations";
     }
 
     @GetMapping("/shareLocation")
