@@ -18,4 +18,6 @@ public interface LocationRepository extends JpaRepository<Location, Integer> {
     @Query("select l from Location l where l.user.id = ?1")
     List<Location> findAllMyLocations(Long id);
 
+
+
 }

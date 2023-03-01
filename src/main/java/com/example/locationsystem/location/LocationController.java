@@ -30,6 +30,12 @@ public class LocationController {
         this.locationRepository = locationRepository;
     }
 
+    @GetMapping("/")
+    public String home() {
+        return "home";
+    }
+
+
     @GetMapping("/addLocation")
     public String addLocation(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
         User entityUser = currentUser.getUser();
@@ -56,6 +62,13 @@ public class LocationController {
         model.addAttribute("readOnlyLocations",locationRepository.findAllMyReadOnlyLocations(entityUser.getId()));
         model.addAttribute("adminLocations",locationRepository.findAllMyAdminLocations(entityUser.getId()));
         return "myLocations";
+    }
+
+    @GetMapping("/showFriends/{id}/")
+    public String showFriends(@PathVariable Integer id, Model model) {
+        model.addAttribute("readOnlyUsers",userRepository.findAllReadOnlyFriendsOnLocation(locationRepository.getReferenceById(id)));
+        model.addAttribute("adminUsers",userRepository.findAllAdminFriendsOnLocation(locationRepository.getReferenceById(id)));
+        return "showFriends";
     }
 
     @GetMapping("/shareLocation")
