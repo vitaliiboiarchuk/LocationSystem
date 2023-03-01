@@ -3,7 +3,6 @@ package com.example.locationsystem.location;
 import com.example.locationsystem.user.CurrentUser;
 import com.example.locationsystem.user.User;
 import com.example.locationsystem.user.UserRepository;
-import com.oracle.wls.shaded.org.apache.xpath.operations.Mod;
 import jakarta.validation.Valid;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -138,6 +137,4 @@ public class LocationController {
         userRepository.save(user);
         return "redirect:/";
     }
-
-
 }
