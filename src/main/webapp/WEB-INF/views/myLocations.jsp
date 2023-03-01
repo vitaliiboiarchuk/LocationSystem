@@ -26,6 +26,7 @@
         <tr>
             <td>${location.name}</td>
             <td>${location.address}</td>
+            <td><a href="<c:url value="/showFriends/${location.id}/"/>">Show friends</a></td>
         </tr>
     </c:forEach>
     </tbody>
