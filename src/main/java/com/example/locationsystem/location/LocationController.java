@@ -55,6 +55,16 @@ public class LocationController {
         return "location/friends";
     }
 
+    @RequestMapping("/{locationId}/{userId}/")
+    public String changeAccess(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable long locationId, @PathVariable long userId) {
+        User entityUser = currentUser.getUser();
+        User owner = userService.findLocationOwner(locationId, entityUser.getId());
+        if (owner == null) {
+            userAccessService.changeUserAccess(userId);
+        }
+        return "redirect:/";
+    }
+
     @GetMapping("/add")
     public String addLocation(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
         User entityUser = currentUser.getUser();

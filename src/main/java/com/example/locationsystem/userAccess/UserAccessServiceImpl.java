@@ -16,4 +16,15 @@ public class UserAccessServiceImpl implements UserAccessService {
         userAccessRepository.save(userAccess);
     }
 
+    @Override
+    public void changeUserAccess(Long id) {
+        UserAccess access = userAccessRepository.findUserAccessByUserId(id);
+        if (access.getTitle().equals("READ")) {
+            access.setTitle("ADMIN");
+        } else if (access.getTitle().equals("ADMIN")) {
+            access.setTitle("READ");
+        }
+        userAccessRepository.save(access);
+    }
+
 }
