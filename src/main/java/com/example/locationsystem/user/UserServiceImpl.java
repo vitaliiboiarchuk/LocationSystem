@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -39,6 +40,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findById(Long id) {
         return userRepository.getById(id);
+    }
+
+    @Override
+    public List<User> findUsersToShare(Long id) {
+        return userRepository.findAllByIdNotLike(id);
     }
 }
 
