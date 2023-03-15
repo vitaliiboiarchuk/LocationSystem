@@ -23,7 +23,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public Location findLocationByName(String name) {
-        return locationRepository.findLocationsByName(name);
+        return locationRepository.findLocationByName(name);
     }
 
     @Override
