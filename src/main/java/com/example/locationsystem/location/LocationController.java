@@ -31,6 +31,30 @@ public class LocationController {
         this.userAccessService = userAccessService;
     }
 
+    @RequestMapping("")
+    public String showLocations(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
+        User entityUser = currentUser.getUser();
+        model.addAttribute("locations",locationService.findAllAddedLocations(entityUser.getId()));
+        model.addAttribute("adminAccess",locationService.findAllLocationsWithAccess(entityUser.getId(),"ADMIN"));
+        model.addAttribute("readAccess",locationService.findAllLocationsWithAccess(entityUser.getId(),"READ"));
+        return "location/locations";
+    }
+
+    @RequestMapping("/{locationId}/")
+    public String showFriendsOnLocation(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable long locationId, Model model) {
+        User entityUser = currentUser.getUser();
+        model.addAttribute("adminAccess",userService.findAllUsersWithAccessOnLocation(locationId,"ADMIN", entityUser.getId()));
+        model.addAttribute("readAccess",userService.findAllUsersWithAccessOnLocation(locationId,"READ", entityUser.getId()));
+        User owner = userService.findLocationOwner(locationId, entityUser.getId());
+        if (owner != null) {
+            model.addAttribute("showOwner",true);
+            model.addAttribute("owner", owner);
+        } else {
+            model.addAttribute("showOwnerActions",true);
+        }
+        return "location/friends";
+    }
+
     @GetMapping("/add")
     public String addLocation(@AuthenticationPrincipal CurrentUser currentUser, Model model) {
         User entityUser = currentUser.getUser();

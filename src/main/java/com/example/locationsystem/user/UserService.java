@@ -12,4 +12,8 @@ public interface UserService {
 
     List<User> findUsersToShare(Long id);
 
+    List<User> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id);
+
+    User findLocationOwner(Long locationId, Long id);
+
 }

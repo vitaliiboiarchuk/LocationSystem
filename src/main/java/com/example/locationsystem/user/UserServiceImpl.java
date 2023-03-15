@@ -46,5 +46,21 @@ public class UserServiceImpl implements UserService {
     public List<User> findUsersToShare(Long id) {
         return userRepository.findAllByIdNotLike(id);
     }
+
+    @Override
+    public List<User> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id) {
+        List<User> users = userRepository.findAllUsersWithAccessOnLocation(locationId,title);
+        users.removeIf(user -> user.getId().equals(id));
+        return users;
+    }
+
+    @Override
+    public User findLocationOwner(Long locationId, Long id) {
+        User owner = userRepository.findUserByLocationId(locationId);
+        if (owner.getId().equals(id)) {
+            return null;
+        }
+        return owner;
+    }
 }
 
