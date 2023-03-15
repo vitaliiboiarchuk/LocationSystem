@@ -32,7 +32,7 @@ public class Location {
     @ManyToOne
     private User user;
 
-    @OneToMany(mappedBy = "location")
+    @OneToMany(mappedBy = "location",cascade = CascadeType.ALL)
     private List<UserAccess> accesses;
 
     public Location() {

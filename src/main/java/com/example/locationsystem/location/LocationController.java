@@ -124,5 +124,15 @@ public class LocationController {
         userAccessService.saveUserAccess(userAccess);
         return "redirect:/";
     }
+
+    @RequestMapping("/{locationId}/delete")
+    public String deleteLocation(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable Long locationId) {
+        User entityUser = currentUser.getUser();
+        User owner = userService.findLocationOwner(locationId, entityUser.getId());
+        if (owner == null) {
+            locationService.deleteLocation(locationId);
+        }
+        return "redirect:/";
+    }
 }
 

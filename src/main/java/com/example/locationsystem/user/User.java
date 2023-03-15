@@ -30,7 +30,7 @@ public class User {
     @NonNull
     private String password;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
     private List<UserAccess> accesses;
 
     @NonNull

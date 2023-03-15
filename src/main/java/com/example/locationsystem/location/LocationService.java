@@ -14,4 +14,6 @@ public interface LocationService {
 
     List<Location> findNotSharedToUserLocations(Long id, Long userId);
 
+    void deleteLocation(Long id);
+
 }

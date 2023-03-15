@@ -57,4 +57,9 @@ public class LocationServiceImpl implements LocationService {
         return locationsToShare;
     }
 
+    @Override
+    public void deleteLocation(Long id) {
+        locationRepository.deleteById(id);
+    }
+
 }
