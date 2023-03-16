@@ -60,7 +60,7 @@ public class LocationController {
         User entityUser = currentUser.getUser();
         User owner = userService.findLocationOwner(locationId, entityUser.getId());
         if (owner == null) {
-            userAccessService.changeUserAccess(userId);
+            userAccessService.changeUserAccess(locationId,userId);
         }
         return "redirect:/";
     }

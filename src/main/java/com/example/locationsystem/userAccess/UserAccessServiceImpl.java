@@ -17,8 +17,8 @@ public class UserAccessServiceImpl implements UserAccessService {
     }
 
     @Override
-    public void changeUserAccess(Long id) {
-        UserAccess access = userAccessRepository.findUserAccessByUserId(id);
+    public void changeUserAccess(Long locationId, Long userId) {
+        UserAccess access = userAccessRepository.findUserAccessByLocationIdAndUserId(locationId, userId);
         if (access.getTitle().equals("READ")) {
             access.setTitle("ADMIN");
         } else if (access.getTitle().equals("ADMIN")) {

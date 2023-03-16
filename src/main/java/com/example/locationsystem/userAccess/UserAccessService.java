@@ -4,5 +4,5 @@ public interface UserAccessService {
 
     void saveUserAccess(UserAccess userAccess);
 
-    void changeUserAccess(Long id);
+    void changeUserAccess(Long locationId, Long userId);
 }

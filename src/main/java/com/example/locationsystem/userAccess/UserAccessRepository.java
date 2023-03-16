@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserAccessRepository extends JpaRepository<UserAccess,Long> {
 
-    UserAccess findUserAccessByUserId(Long id);
+    UserAccess findUserAccessByLocationIdAndUserId(Long locationId, Long userId);
 }

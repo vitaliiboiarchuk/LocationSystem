@@ -29,9 +29,9 @@ class UserAccessRepositoryTest extends Specification {
         testEntityManager.persist(access)
     }
 
-    def "should find user access by user id"() {
+    def "should find user access by location id and user id"() {
         when:
-        def result = userAccessRepository.findUserAccessByUserId(user.id)
+        def result = userAccessRepository.findUserAccessByLocationIdAndUserId(location.id, user.id)
 
         then:
         access == result

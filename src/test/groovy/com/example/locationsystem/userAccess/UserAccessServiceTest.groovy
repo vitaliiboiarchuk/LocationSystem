@@ -38,11 +38,12 @@ class UserAccessServiceTest extends Specification {
 
     def "should change user access"() {
         given:
+        location.setId(1L)
         user1.setId(1L)
-        userAccessRepository.findUserAccessByUserId(user1.id) >> userAccess
+        userAccessRepository.findUserAccessByLocationIdAndUserId(location.id, user1.id) >> userAccess
 
         when:
-        userAccessService.changeUserAccess(user1.id)
+        userAccessService.changeUserAccess(location.id, user1.id)
 
         then:
         userAccess.title == "READ"
