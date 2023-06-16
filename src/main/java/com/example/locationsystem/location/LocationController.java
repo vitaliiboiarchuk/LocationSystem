@@ -111,10 +111,7 @@ public class LocationController {
 
     @RequestMapping("/{locationId}/delete")
     public String deleteLocation(@CookieValue(value = "user") String userId, @PathVariable Long locationId) {
-        User owner = userService.findLocationOwner(locationId, Long.valueOf(userId));
-        if (owner == null) {
-            locationService.deleteLocation(locationId);
-        }
+        locationService.deleteLocation(locationId, Long.valueOf(userId));
         return "redirect:/";
     }
 }

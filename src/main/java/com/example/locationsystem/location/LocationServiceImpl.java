@@ -2,64 +2,47 @@ package com.example.locationsystem.location;
 
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 @Service
 public class LocationServiceImpl implements LocationService {
 
-    private final LocationRepository locationRepository;
+    private final LocationDao locationDao;
 
-    public LocationServiceImpl(LocationRepository locationRepository) {
-        this.locationRepository = locationRepository;
+    public LocationServiceImpl(LocationDao locationDao) {
+        this.locationDao = locationDao;
     }
+
 
     @Override
     public void saveLocation(Location location) {
-        locationRepository.save(location);
+        locationDao.saveLocation(location);
     }
 
     @Override
     public Location findLocationByNameAndUserId(String name, Long userId) {
-        return locationRepository.findLocationByNameAndUserId(name, userId);
+        return locationDao.findLocationByNameAndUserId(name,userId);
     }
 
     @Override
     public List<Location> findAllAddedLocations(Long id) {
-        return locationRepository.findLocationsByUserId(id);
+        return locationDao.findAllAddedLocations(id);
     }
 
     @Override
     public List<Location> findAllLocationsWithAccess(Long id, String title) {
-        return locationRepository.findAllAccessLocationsByUserIdAndTitle(id, title);
+        return locationDao.findAllLocationsWithAccess(id,title);
     }
 
     @Override
     public List<Location> findNotSharedToUserLocations(Long id, Long userId) {
-        List<Location> locationsToShare = Stream.of(
-                        findAllAddedLocations(id),
-                        findAllLocationsWithAccess(id,"ADMIN")
-                )
-                .flatMap(Collection::stream).collect(Collectors.toList());
-
-        List<Location> allLocationsOfUser = Stream.of(
-                        findAllAddedLocations(userId),
-                        findAllLocationsWithAccess(userId,"ADMIN"),
-                        findAllLocationsWithAccess(userId,"READ")
-                )
-                .flatMap(Collection::stream).collect(Collectors.toList());
-
-        for (Location location : allLocationsOfUser) {
-            locationsToShare.remove(location);
-        }
-        return locationsToShare;
+        return locationDao.findNotSharedToUserLocations(id,userId);
     }
 
     @Override
-    public void deleteLocation(Long id) {
-        locationRepository.deleteById(id);
+    public void deleteLocation(Long id, Long userId) {
+        locationDao.deleteLocation(id,userId);
     }
 
 }

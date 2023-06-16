@@ -11,7 +11,7 @@
 
 <form:form method="post" modelAttribute="location">
 
-    <form:input path="user" type="hidden" value="${user.id.toString()}"/>
+    <form:input path="user.id" type="hidden" value="${user.id.toString()}"/>
 
     Name:
     <form:input path="name" type="text"/>

@@ -15,8 +15,8 @@
         <form:select path="title" items="${accessTitles}"/>
 
         <h3>Choose location</h3>
-        <form:select path="location" items="${locations}" itemValue="id" itemLabel="name"/>
-        <form:input path="user" type="hidden" value="${user.id.toString()}"/>
+        <form:select path="location.id" items="${locations}" itemValue="id" itemLabel="name"/>
+        <form:input path="user.id" type="hidden" value="${user.id.toString()}"/>
 
         <input type="submit" value="Submit"></input>
     </form:form>

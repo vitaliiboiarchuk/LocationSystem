@@ -9,53 +9,46 @@ import java.util.List;
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
+    private final UserDao userDao;
 
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public UserServiceImpl(UserDao userDao) {
+        this.userDao = userDao;
     }
 
     @Override
     public User findByUsername(String username) {
-        return userRepository.findByUsername(username);
+        return userDao.findByUsername(username);
     }
 
     @Override
     public User findUserByUsernameAndPassword(String username, String password) {
-        return userRepository.findByUsernameAndPassword(username,password);
+        return userDao.findUserByUsernameAndPassword(username,password);
     }
 
 
     @Override
     public void saveUser(User user) {
-        user.setPassword(user.getPassword());
-        userRepository.save(user);
+        userDao.saveUser(user);
     }
 
     @Override
     public User findById(Long id) {
-        return userRepository.getById(id);
+        return userDao.findById(id);
     }
 
     @Override
     public List<User> findUsersToShare(Long id) {
-        return userRepository.findAllByIdNotLike(id);
+        return userDao.findUsersToShare(id);
     }
 
     @Override
     public List<User> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id) {
-        List<User> users = userRepository.findAllUsersWithAccessOnLocation(locationId, title);
-        users.removeIf(user -> user.getId().equals(id));
-        return users;
+        return userDao.findAllUsersWithAccessOnLocation(locationId,title,id);
     }
 
     @Override
     public User findLocationOwner(Long locationId, Long id) {
-        User owner = userRepository.findUserByLocationId(locationId);
-        if (owner.getId().equals(id)) {
-            return null;
-        }
-        return owner;
+        return userDao.findLocationOwner(locationId,id);
     }
 }
 
