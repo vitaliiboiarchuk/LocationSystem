@@ -1,39 +1,34 @@
 package com.example.locationsystem.user;
 
-import com.example.locationsystem.role.Role;
-import com.example.locationsystem.role.RoleRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.HashSet;
+
 import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-                           BCryptPasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
+    public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
     }
 
     @Override
-    public User findByUserName(String username) {
+    public User findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
     @Override
+    public User findUserByUsernameAndPassword(String username, String password) {
+        return userRepository.findByUsernameAndPassword(username,password);
+    }
+
+
+    @Override
     public void saveUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setEnabled(1);
-        Role userRole = roleRepository.findByName("ROLE_USER");
-        user.setRoles(new HashSet<>(Arrays.asList(userRole)));
+        user.setPassword(user.getPassword());
         userRepository.save(user);
     }
 
@@ -49,7 +44,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id) {
-        List<User> users = userRepository.findAllUsersWithAccessOnLocation(locationId,title);
+        List<User> users = userRepository.findAllUsersWithAccessOnLocation(locationId, title);
         users.removeIf(user -> user.getId().equals(id));
         return users;
     }

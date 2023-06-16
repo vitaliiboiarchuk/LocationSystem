@@ -6,7 +6,7 @@ public interface LocationService {
 
     void saveLocation(Location location);
 
-    Location findLocationByName(String name);
+    Location findLocationByNameAndUserId(String name, Long userId);
 
     List<Location> findAllAddedLocations(Long id);
 

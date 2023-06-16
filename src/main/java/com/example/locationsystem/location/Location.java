@@ -21,11 +21,9 @@ public class Location {
     private Long id;
 
     @NonNull
-    @NotBlank
     private String name;
 
     @NonNull
-    @NotBlank
     private String address;
 
     @NonNull

@@ -1,4 +1,6 @@
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
@@ -12,25 +14,28 @@
     Name:
 
     <form:input path="name" type="text"/>
-    <form:errors path="name" class="alert alert-danger"/>
 
     Password:
 
     <form:input path="password" type="password"/>
-    <form:errors path="password" class="alert alert-danger"/>
 
     Email:
 
     <form:input path="username" type="email"/>
-    <form:errors path="username" class="alert alert-danger"/>
 
     <input type="submit" value="Create Account"></input>
+
+    <c:if test="${param.error != null}">
+        <div id="error" class="alert alert-danger">
+            <spring:message code="message.alreadyExists">
+            </spring:message>
+        </div>
+    </c:if>
 
     <div class="col-12">
         <p class="small mb-0">Already have an account? <a href="/login">Login</a></p>
     </div>
 </form:form>
-
 
 </body>
 </html>

@@ -4,7 +4,9 @@ import java.util.List;
 
 public interface UserService {
 
-    User findByUserName(String name);
+    User findByUsername(String name);
+
+    User findUserByUsernameAndPassword(String username, String password);
 
     void saveUser(User user);
 

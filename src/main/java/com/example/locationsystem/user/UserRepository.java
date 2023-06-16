@@ -12,6 +12,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     User findByUsername(String username);
 
+    User findByUsernameAndPassword(String username, String password);
+
     List<User> findAllByIdNotLike(Long id);
 
     @Query("select u from User u join UserAccess ua on u.id = ua.user.id where ua.location.id = ?1 and ua.title = ?2")

@@ -22,8 +22,8 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public Location findLocationByName(String name) {
-        return locationRepository.findLocationByName(name);
+    public Location findLocationByNameAndUserId(String name, Long userId) {
+        return locationRepository.findLocationByNameAndUserId(name, userId);
     }
 
     @Override
