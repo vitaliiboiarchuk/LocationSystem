@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Controller
 @RequestMapping("/location")
@@ -27,58 +28,83 @@ public class LocationController {
     }
 
     @RequestMapping("")
-    public String showLocations(@CookieValue(value = "user") String userId, Model model) {
-        model.addAttribute("locations", locationService.findAllAddedLocations(Long.valueOf(userId)));
-        model.addAttribute("adminAccess", locationService.findAllLocationsWithAccess(Long.valueOf(userId), "ADMIN"));
-        model.addAttribute("readAccess", locationService.findAllLocationsWithAccess(Long.valueOf(userId), "READ"));
-        return "location/locations";
+    public CompletableFuture<String> showLocations(@CookieValue(value = "user") String userId, Model model) {
+        CompletableFuture<List<Location>> addedLocationsFuture = locationService.findAllAddedLocations(Long.valueOf(userId));
+        CompletableFuture<List<Location>> adminAccessFuture = locationService.findAllLocationsWithAccess(Long.valueOf(userId), "ADMIN");
+        CompletableFuture<List<Location>> readAccessFuture = locationService.findAllLocationsWithAccess(Long.valueOf(userId), "READ");
+
+        return CompletableFuture.allOf(addedLocationsFuture, adminAccessFuture, readAccessFuture).thenApplyAsync((Void) -> {
+            model.addAttribute("locations", addedLocationsFuture.join());
+            model.addAttribute("adminAccess", adminAccessFuture.join());
+            model.addAttribute("readAccess", readAccessFuture.join());
+            return "location/locations";
+        });
     }
 
     @RequestMapping("/{locationId}/")
-    public String showFriendsOnLocation(@CookieValue(value = "user") String userId, @PathVariable Long locationId, Model model) {
-        model.addAttribute("adminAccess", userService.findAllUsersWithAccessOnLocation(locationId, "ADMIN", Long.valueOf(userId)));
-        model.addAttribute("readAccess", userService.findAllUsersWithAccessOnLocation(locationId, "READ", Long.valueOf(userId)));
-        User owner = userService.findLocationOwner(locationId, Long.valueOf(userId));
-        if (owner != null) {
-            model.addAttribute("showOwner", true);
-            model.addAttribute("owner", owner);
-        } else {
-            model.addAttribute("showOwnerActions", true);
-        }
-        return "location/friends";
+    public CompletableFuture<String> showFriendsOnLocation(@CookieValue(value = "user") String userId, @PathVariable Long locationId, Model model) {
+        CompletableFuture<List<User>> adminAccessFuture = userService.findAllUsersWithAccessOnLocation(locationId,"ADMIN",Long.valueOf(userId));
+        CompletableFuture<List<User>> readAccessFuture = userService.findAllUsersWithAccessOnLocation(locationId,"READ",Long.valueOf(userId));
+        CompletableFuture<User> ownerFuture = userService.findLocationOwner(locationId,Long.valueOf(userId));
+
+        return CompletableFuture.allOf(adminAccessFuture,readAccessFuture,ownerFuture).thenApplyAsync((Void) -> {
+            model.addAttribute("adminAccess",adminAccessFuture.join());
+            model.addAttribute("readAccess",readAccessFuture.join());
+            User owner = ownerFuture.join();
+            if (owner != null) {
+                model.addAttribute("showOwner", true);
+                model.addAttribute("owner", owner);
+            } else {
+                model.addAttribute("showOwnerActions", true);
+            }
+            return "location/friends";
+        });
     }
 
 
     @RequestMapping("/{locationId}/{uId}/")
-    public String changeAccess(@CookieValue(value = "user") String userId, @PathVariable Long locationId, @PathVariable Long uId) {
-        User owner = userService.findLocationOwner(locationId, Long.valueOf(userId));
-        if (owner == null) {
-            userAccessService.changeUserAccess(locationId, uId);
-        }
-        return "redirect:/";
+    public CompletableFuture<String> changeAccess(@CookieValue(value = "user") String userId, @PathVariable Long locationId, @PathVariable Long uId) {
+        return userService.findLocationOwner(locationId, Long.valueOf(userId)).thenComposeAsync(owner -> {
+            if (owner == null) {
+                return userAccessService.changeUserAccess(locationId, uId).thenApplyAsync((Void) -> "redirect:/");
+            }
+            return CompletableFuture.completedFuture("redirect:/");
+        });
     }
 
     @GetMapping("/add")
-    public String addLocation(@CookieValue(value = "user") String userId, Model model) {
-        model.addAttribute("user", userService.findById(Long.valueOf(userId)));
-        model.addAttribute("location", new Location());
-        return "location/add";
+    public CompletableFuture<String> addLocation(@CookieValue(value = "user") String userId, Model model) {
+        CompletableFuture<User> userFuture = userService.findById(Long.valueOf(userId));
+
+        return userFuture.thenApplyAsync(user -> {
+            model.addAttribute("user", user);
+            model.addAttribute("location", new Location());
+            return "location/add";
+        });
     }
 
     @PostMapping("/add")
-    public String addLocation(@CookieValue(value = "user") String userId, @Valid Location location) {
-        Location locExists = locationService.findLocationByNameAndUserId(location.getName(), Long.valueOf(userId));
-        if (locExists != null || location.getName().isEmpty() || location.getAddress().isEmpty()) {
-            return "redirect:/location/add?error=true";
-        }
-        locationService.saveLocation(location);
-        return "redirect:/";
+    public CompletableFuture<String> addLocation(@CookieValue(value = "user") String userId, @Valid Location location) {
+        CompletableFuture<Location> locExistsFuture = locationService.findLocationByNameAndUserId(location.getName(), Long.valueOf(userId));
+
+        return locExistsFuture.thenApplyAsync(locExists -> {
+            if (locExists != null || location.getName().isEmpty() || location.getAddress().isEmpty()) {
+                return "redirect:/location/add?error=true";
+            } else {
+                locationService.saveLocation(location);
+                return "redirect:/";
+            }
+        });
     }
 
     @RequestMapping("/share")
-    public String shareLocation(@CookieValue(value = "user") String userId, Model model) {
-        model.addAttribute("users", userService.findUsersToShare(Long.valueOf(userId)));
-        return "location/users";
+    public CompletableFuture<String> shareLocation(@CookieValue(value = "user") String userId, Model model) {
+        CompletableFuture<List<User>> usersFuture = userService.findUsersToShare(Long.valueOf(userId));
+
+        return usersFuture.thenApplyAsync(users -> {
+            model.addAttribute("users", users);
+            return "location/users";
+        });
     }
 
     @ModelAttribute("accessTitles")
@@ -90,29 +116,31 @@ public class LocationController {
     }
 
     @GetMapping("/share/{id}/")
-    public String shareLocation(@CookieValue(value = "user") String userId, @PathVariable Long id, Model model) {
-        List<Location> locations = locationService.findNotSharedToUserLocations(Long.valueOf(userId), id);
-        if (locations.isEmpty()) {
-            model.addAttribute("notAvailable", true);
-        } else {
-            model.addAttribute("available", true);
-            model.addAttribute("userAccess", new UserAccess());
-            model.addAttribute("user", userService.findById(id));
-            model.addAttribute("locations", locations);
-        }
-        return "location/share";
+    public CompletableFuture<String> shareLocation(@CookieValue(value = "user") String userId, @PathVariable Long id, Model model) {
+        CompletableFuture<List<Location>> locationsFuture = locationService.findNotSharedToUserLocations(Long.valueOf(userId), id);
+
+        return locationsFuture.thenComposeAsync(locations -> {
+            if (locations.isEmpty()) {
+                model.addAttribute("notAvailable", true);
+            } else {
+                model.addAttribute("available", true);
+                model.addAttribute("userAccess", new UserAccess());
+                model.addAttribute("user", userService.findById(id).join());
+                model.addAttribute("locations", locations);
+            }
+            return CompletableFuture.completedFuture("location/share");
+        });
     }
 
     @PostMapping("/share")
-    public String shareLocation(@Valid UserAccess userAccess) {
-        userAccessService.saveUserAccess(userAccess);
-        return "redirect:/";
+    public CompletableFuture<String> shareLocation(@Valid UserAccess userAccess) {
+        return userAccessService.saveUserAccess(userAccess).thenApplyAsync((Void) -> "redirect:/");
     }
 
     @RequestMapping("/{locationId}/delete")
-    public String deleteLocation(@CookieValue(value = "user") String userId, @PathVariable Long locationId) {
-        locationService.deleteLocation(locationId, Long.valueOf(userId));
-        return "redirect:/";
+    public CompletableFuture<String> deleteLocation(@CookieValue(value = "user") String userId, @PathVariable Long locationId) {
+        CompletableFuture<Void> deleteLocationFuture = locationService.deleteLocation(locationId, Long.valueOf(userId));
+        return deleteLocationFuture.thenApplyAsync((Void) -> "redirect:/");
     }
 }
 

@@ -2,6 +2,8 @@ package com.example.locationsystem.userAccess;
 
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 public class UserAccessServiceImpl implements UserAccessService {
 
@@ -12,13 +14,13 @@ public class UserAccessServiceImpl implements UserAccessService {
     }
 
     @Override
-    public void saveUserAccess(UserAccess userAccess) {
-        userAccessDao.saveUserAccess(userAccess);
+    public CompletableFuture<Void> saveUserAccess(UserAccess userAccess) {
+        return userAccessDao.saveUserAccess(userAccess);
     }
 
     @Override
-    public void changeUserAccess(Long locationId, Long userId) {
-        userAccessDao.changeUserAccess(locationId,userId);
+    public CompletableFuture<Void> changeUserAccess(Long locationId, Long userId) {
+        return userAccessDao.changeUserAccess(locationId,userId);
     }
 
 }

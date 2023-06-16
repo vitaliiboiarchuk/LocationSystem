@@ -3,6 +3,7 @@ package com.example.locationsystem.location;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 
 @Service
@@ -16,33 +17,33 @@ public class LocationServiceImpl implements LocationService {
 
 
     @Override
-    public void saveLocation(Location location) {
-        locationDao.saveLocation(location);
+    public CompletableFuture<Void> saveLocation(Location location) {
+        return locationDao.saveLocation(location);
     }
 
     @Override
-    public Location findLocationByNameAndUserId(String name, Long userId) {
+    public CompletableFuture<Location> findLocationByNameAndUserId(String name, Long userId) {
         return locationDao.findLocationByNameAndUserId(name,userId);
     }
 
     @Override
-    public List<Location> findAllAddedLocations(Long id) {
+    public CompletableFuture<List<Location>> findAllAddedLocations(Long id) {
         return locationDao.findAllAddedLocations(id);
     }
 
     @Override
-    public List<Location> findAllLocationsWithAccess(Long id, String title) {
+    public CompletableFuture<List<Location>> findAllLocationsWithAccess(Long id, String title) {
         return locationDao.findAllLocationsWithAccess(id,title);
     }
 
     @Override
-    public List<Location> findNotSharedToUserLocations(Long id, Long userId) {
+    public CompletableFuture<List<Location>> findNotSharedToUserLocations(Long id, Long userId) {
         return locationDao.findNotSharedToUserLocations(id,userId);
     }
 
     @Override
-    public void deleteLocation(Long id, Long userId) {
-        locationDao.deleteLocation(id,userId);
+    public CompletableFuture<Void> deleteLocation(Long id, Long userId) {
+        return locationDao.deleteLocation(id,userId);
     }
 
 }

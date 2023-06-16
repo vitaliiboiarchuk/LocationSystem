@@ -12,6 +12,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.util.concurrent.CompletableFuture;
 
 @Controller
 public class UserController {
@@ -23,14 +24,16 @@ public class UserController {
     }
 
     @RequestMapping("/")
-    public String home(HttpServletRequest request, Model model) {
-        Cookie cookie = WebUtils.getCookie(request, "user");
-        if (cookie != null) {
-            model.addAttribute("myProfile",true);
-        } else {
-            model.addAttribute("welcomePage",true);
-        }
-        return "homePage";
+    public CompletableFuture<String> home(HttpServletRequest request, Model model) {
+        return CompletableFuture.supplyAsync(() -> {
+            Cookie cookie = WebUtils.getCookie(request, "user");
+            if (cookie != null) {
+                model.addAttribute("myProfile", true);
+            } else {
+                model.addAttribute("welcomePage", true);
+            }
+            return "homePage";
+        });
     }
 
     @GetMapping("/registration")
@@ -40,14 +43,14 @@ public class UserController {
     }
 
     @PostMapping("/registration")
-    public String registerPost(@Valid User user) {
-        User findUser = userService.findByUsername(user.getUsername());
-        if (findUser != null || user.getUsername().isEmpty() || user.getPassword().isEmpty()) {
-            return "redirect:/registration?error=true";
-        } else {
-            userService.saveUser(user);
-            return "redirect:/login";
-        }
+    public CompletableFuture<String> registerPost(@Valid User user) {
+        return userService.findByUsername(user.getUsername()).thenComposeAsync(existingUser -> {
+            if (existingUser != null || user.getUsername().isEmpty() || user.getPassword().isEmpty()) {
+                return CompletableFuture.completedFuture("redirect:/registration?error=true");
+            } else {
+                return userService.saveUser(user).thenApplyAsync(savedUser -> "redirect:/login");
+            }
+        });
     }
 
     @GetMapping("/login")
@@ -57,24 +60,29 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String loginPost(@RequestParam("username") String username, @RequestParam("password") String
+    public CompletableFuture<String> loginPost(@RequestParam("username") String username, @RequestParam("password") String
             password, HttpServletResponse response) {
-        User user = userService.findUserByUsernameAndPassword(username, password);
-        if (user != null) {
-            Cookie cookie = new Cookie("user", user.getId().toString());
-            cookie.setPath("/");
-            response.addCookie(cookie);
-            return "redirect:/";
-        } else return "redirect:/login?error=true";
+        return userService.findUserByUsernameAndPassword(username, password).thenApplyAsync(user -> {
+            if (user != null) {
+                Cookie cookie = new Cookie("user", user.getId().toString());
+                cookie.setPath("/");
+                response.addCookie(cookie);
+                return "redirect:/";
+            } else {
+                return "redirect:/login?error=true";
+            }
+        });
     }
 
     @RequestMapping("/logout")
-    public String logout(HttpServletRequest request, HttpServletResponse response) {
-        Cookie cookie = WebUtils.getCookie(request, "user");
-        if (cookie != null) {
-            cookie.setMaxAge(0);
-            response.addCookie(cookie);
-        }
-        return "redirect:/";
+    public CompletableFuture<String> logout(HttpServletRequest request, HttpServletResponse response) {
+        return CompletableFuture.supplyAsync(() -> {
+            Cookie cookie = WebUtils.getCookie(request, "user");
+            if (cookie != null) {
+                cookie.setMaxAge(0);
+                response.addCookie(cookie);
+            }
+            return "redirect:/";
+        });
     }
 }
