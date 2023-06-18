@@ -1,123 +1,132 @@
 package com.example.locationsystem.location
 
 import com.example.locationsystem.user.User
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
 
-@SpringBootTest
+import java.util.concurrent.CompletableFuture
+
 class LocationServiceTest extends Specification {
 
-    @Autowired
+    LocationDao locationDao
+
     LocationService locationService
 
-    @Autowired
-    LocationRepository locationRepository
+    User user
 
-    def user1 = new User("test@gmail.com", "test", "1234", 1)
-    def location1 = new Location("test", "test", user1)
-    def location4 = new Location("test3", "test", user1)
+    Location loc
 
-    def addedLocationsUser1 = new ArrayList<>()
-    def accessLocationsUser1 = new ArrayList<>()
+    List<Location> locs
 
-    def user2 = new User("test2@gmail.com","tet","1234",1)
-    def location2 = new Location("test2", "test", user2)
+    def setup() {
+        locationDao = Mock(LocationDao)
+        locationService = new LocationServiceImpl(locationDao)
 
-    def addedLocationsUser2 = new ArrayList<>()
-    def accessLocationsUser2 = new ArrayList<>()
+        user = new User(1L,"user1","user1","pass1")
+        loc = new Location(1L,"name1","add1",user)
 
-
-    def user3 = new User("test3@gmail.com","tet","1234",1)
-    def location3 = new Location("test3", "test", user3)
-
-
-    void setup() {
-        locationRepository = Mock()
-        locationService = new LocationServiceImpl(locationRepository)
-
-        user1.setId(1L)
-        location1.setId(1L)
-
-        addedLocationsUser1 << location1
-        addedLocationsUser1 << location4
-        accessLocationsUser1 << location2
-        accessLocationsUser1 << location3
-
-        user2.setId(2L)
-
-        addedLocationsUser2 << location2
-        accessLocationsUser2 << location1
+        locs = new ArrayList()
+        locs << loc
     }
 
-    def "should save location"() {
-        when:
-        locationService.saveLocation(location1)
-
-        then:
-        1 * locationRepository.save(location1)
-    }
-
-    def "should find location by name"() {
+    def "saveLocation should insert location into database"() {
         given:
-        locationRepository.findLocationByName(location1.name) >> location1
+        locationDao.saveLocation(loc) >> CompletableFuture.completedFuture(null)
 
         when:
-        def result = locationService.findLocationByName(location1.name)
+        def result = locationService.saveLocation(loc)
 
         then:
-        location1 == result
+        def saveResult = result?.get()
+        saveResult == null
+        1 * locationDao.saveLocation(loc)
     }
 
-    def "should find all added locations"() {
+    def "findLocationByNameAndUserId should return location"() {
         given:
-        locationRepository.findLocationsByUserId(user1.id) >> addedLocationsUser1
+        locationDao.findLocationByNameAndUserId(loc.name,user.id) >> CompletableFuture.completedFuture(loc)
 
         when:
-        def result = locationService.findAllAddedLocations(user1.id)
+        def result = locationService.findLocationByNameAndUserId(loc.name,user.id)
 
         then:
-        addedLocationsUser1 == result
+        def location = result.get()
+        location == loc
     }
 
-    def "should find all locations with access"() {
+    def "findAllAddedLocations should return locations"() {
         given:
-        locationRepository.findAllAccessLocationsByUserIdAndTitle(user2.id,"ADMIN") >> accessLocationsUser2
+        locationDao.findAllAddedLocations(user.id) >> CompletableFuture.completedFuture(locs)
 
         when:
-        def result = locationService.findAllLocationsWithAccess(user2.id,"ADMIN")
+        def result = locationService.findAllAddedLocations(user.id)
 
         then:
-        accessLocationsUser2 == result
+        def locsList = result.get()
+        locsList == locs
+    }
+
+    def "findAllLocationsWithAccess should return locations"() {
+        given:
+        def user2 = new User(2L,"user2","user2","pass2")
+        locationDao.findAllLocationsWithAccess(user2.id,"ADMIN") >> CompletableFuture.completedFuture(locs)
+
+        when:
+        def result = locationDao.findAllLocationsWithAccess(user2.id,"ADMIN")
+
+        then:
+        def locsList = result.get()
+        locsList == locs
     }
 
     def "should delete location"() {
+        given:
+        locationDao.deleteLocation(loc.id,user.id) >> CompletableFuture.completedFuture(null)
+
         when:
-        locationService.deleteLocation(location1.id)
+        def result = locationService.deleteLocation(loc.id,user.id)
 
         then:
-        1 * locationRepository.deleteById(location1.id)
+        def saveResult = result?.get()
+        saveResult == null
+        1 * locationDao.deleteLocation(loc.id,user.id)
     }
 
-    def "should find not shared to user locations"() {
+    def "should find not shared locations to user"() {
         given:
-        def locsToShare = new ArrayList()
-        locsToShare << location4
-        locsToShare << location3
+        def user1 = new User(15L, "test@gmail.com", "test", "1234")
+        def user2 = new User(16L, "test2@gmail.com", "test", "1234")
+        def user3 = new User(17L, "test3@gmail.com", "test", "1234")
 
-        locationRepository.findLocationsByUserId(user1.id) >> addedLocationsUser1
-        locationRepository.findAllAccessLocationsByUserIdAndTitle(user1.id,"ADMIN") >> accessLocationsUser1
+        def loc1 = new Location(15L, "test", "test", user1)
+        def loc2 = new Location(16L, "test", "test", user2)
+        def loc3 = new Location(17L, "test", "test", user3)
+        def loc4 = new Location(18L, "test", "test", user1)
 
-        locationRepository.findLocationsByUserId(user2.id) >> addedLocationsUser2
-        locationRepository.findAllAccessLocationsByUserIdAndTitle(user2.id,"ADMIN") >> accessLocationsUser2
-        locationRepository.findAllAccessLocationsByUserIdAndTitle(user2.id,"READ") >> accessLocationsUser2
+        def addedLocsUser1 = [loc1,loc4]
+        def accessLocsUser1 = [loc2,loc3]
+        def addedLocsUser2 = [loc2]
+        def accessLocsUser2 = [loc1]
+
+        def locsToShare = [loc4,loc3]
+
+        def addedLocsUser1Future = CompletableFuture.completedFuture(addedLocsUser1)
+        def addedLocsUser2Future = CompletableFuture.completedFuture(addedLocsUser2)
+        def accessLocsUser1Future = CompletableFuture.completedFuture(accessLocsUser1)
+        def accessLocsUser2Future = CompletableFuture.completedFuture(accessLocsUser2)
+
+        locationDao.findAllAddedLocations(user1.id) >> addedLocsUser1Future
+        locationDao.findAllLocationsWithAccess(user1.id,"ADMIN") >> accessLocsUser1Future
+
+        locationDao.findAllAddedLocations(user2.id) >> addedLocsUser2Future
+        locationDao.findAllLocationsWithAccess(user2.id,"ADMIN") >> accessLocsUser2Future
+        locationDao.findAllLocationsWithAccess(user2.id,"READ") >> accessLocsUser2Future
 
         when:
         def result = locationService.findNotSharedToUserLocations(user1.id,user2.id)
 
         then:
-        locsToShare == result
+        def locations = result.get()
+        locations == locsToShare
     }
 
 }
-

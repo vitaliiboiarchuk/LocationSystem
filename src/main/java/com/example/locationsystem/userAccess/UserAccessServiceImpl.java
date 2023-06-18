@@ -2,29 +2,25 @@ package com.example.locationsystem.userAccess;
 
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 public class UserAccessServiceImpl implements UserAccessService {
 
-    private final UserAccessRepository userAccessRepository;
+    private final UserAccessDao userAccessDao;
 
-    public UserAccessServiceImpl(UserAccessRepository userAccessRepository) {
-        this.userAccessRepository = userAccessRepository;
+    public UserAccessServiceImpl(UserAccessDao userAccessDao) {
+        this.userAccessDao = userAccessDao;
     }
 
     @Override
-    public void saveUserAccess(UserAccess userAccess) {
-        userAccessRepository.save(userAccess);
+    public CompletableFuture<Void> saveUserAccess(UserAccess userAccess) {
+        return userAccessDao.saveUserAccess(userAccess);
     }
 
     @Override
-    public void changeUserAccess(Long locationId, Long userId) {
-        UserAccess access = userAccessRepository.findUserAccessByLocationIdAndUserId(locationId, userId);
-        if (access.getTitle().equals("READ")) {
-            access.setTitle("ADMIN");
-        } else if (access.getTitle().equals("ADMIN")) {
-            access.setTitle("READ");
-        }
-        userAccessRepository.save(access);
+    public CompletableFuture<Void> changeUserAccess(Long locationId, Long userId) {
+        return userAccessDao.changeUserAccess(locationId,userId);
     }
 
 }

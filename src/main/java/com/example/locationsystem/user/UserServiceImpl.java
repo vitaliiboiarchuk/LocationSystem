@@ -1,66 +1,60 @@
 package com.example.locationsystem.user;
 
-import com.example.locationsystem.role.Role;
-import com.example.locationsystem.role.RoleRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.HashSet;
+
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final UserDao userDao;
 
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-                           BCryptPasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
+    public UserServiceImpl(UserDao userDao) {
+        this.userDao = userDao;
     }
 
     @Override
-    public User findByUserName(String username) {
-        return userRepository.findByUsername(username);
+    public CompletableFuture<User> findByUsername(String username) {
+        return userDao.findByUsername(username);
     }
 
     @Override
-    public void saveUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setEnabled(1);
-        Role userRole = roleRepository.findByName("ROLE_USER");
-        user.setRoles(new HashSet<>(Arrays.asList(userRole)));
-        userRepository.save(user);
+    public CompletableFuture<User> findUserByUsernameAndPassword(String username, String password) {
+        return userDao.findUserByUsernameAndPassword(username,password);
     }
 
     @Override
-    public User findById(Long id) {
-        return userRepository.getById(id);
+    public CompletableFuture<Void> saveUser(User user) {
+        return userDao.saveUser(user);
     }
 
     @Override
-    public List<User> findUsersToShare(Long id) {
-        return userRepository.findAllByIdNotLike(id);
+    public CompletableFuture<User> findById(Long id) {
+        return userDao.findById(id);
     }
 
     @Override
-    public List<User> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id) {
-        List<User> users = userRepository.findAllUsersWithAccessOnLocation(locationId,title);
-        users.removeIf(user -> user.getId().equals(id));
-        return users;
+    public CompletableFuture<List<User>> findUsersToShare(Long id) {
+        return userDao.findUsersToShare(id);
     }
 
     @Override
-    public User findLocationOwner(Long locationId, Long id) {
-        User owner = userRepository.findUserByLocationId(locationId);
-        if (owner.getId().equals(id)) {
-            return null;
-        }
-        return owner;
+    public CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, String title, Long userId) {
+        return userDao.findAllUsersWithAccessOnLocation(locationId,title,userId);
+    }
+
+    @Override
+    public CompletableFuture<User> findLocationOwner(Long locationId, Long id) {
+        CompletableFuture<User> owner = userDao.findLocationOwner(locationId);
+        return owner.thenApplyAsync(result -> {
+            if (result != null && result.getId().equals(id)) {
+                return null;
+            }
+            return result;
+        });
     }
 }
 

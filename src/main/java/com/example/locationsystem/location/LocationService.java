@@ -1,19 +1,20 @@
 package com.example.locationsystem.location;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface LocationService {
 
-    void saveLocation(Location location);
+    CompletableFuture<Void> saveLocation(Location location);
 
-    Location findLocationByName(String name);
+    CompletableFuture<Location> findLocationByNameAndUserId(String name, Long userId);
 
-    List<Location> findAllAddedLocations(Long id);
+    CompletableFuture<List<Location>> findAllAddedLocations(Long id);
 
-    List<Location> findAllLocationsWithAccess(Long id, String title);
+    CompletableFuture<List<Location>> findAllLocationsWithAccess(Long id, String title);
 
-    List<Location> findNotSharedToUserLocations(Long id, Long userId);
+    CompletableFuture<List<Location>> findNotSharedToUserLocations(Long id, Long userId);
 
-    void deleteLocation(Long id);
+    CompletableFuture<Void> deleteLocation(Long id, Long userId);
 
 }
