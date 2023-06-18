@@ -42,13 +42,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id) {
-        return userDao.findAllUsersWithAccessOnLocation(locationId,title,id);
+    public CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, String title, Long userId) {
+        return userDao.findAllUsersWithAccessOnLocation(locationId,title,userId);
     }
 
     @Override
     public CompletableFuture<User> findLocationOwner(Long locationId, Long id) {
-        return userDao.findLocationOwner(locationId,id);
+        CompletableFuture<User> owner = userDao.findLocationOwner(locationId);
+        return owner.thenApplyAsync(result -> {
+            if (result != null && result.getId().equals(id)) {
+                return null;
+            }
+            return result;
+        });
     }
 }
 

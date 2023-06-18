@@ -77,31 +77,24 @@ public class UserDao {
     }
 
     @Async
-    public CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id) {
+    public CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, String title, Long userId) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                List<User> users = jdbcTemplate.query("SELECT users.id,users.name,users.username FROM users JOIN accesses ON users.id = accesses.user_id WHERE accesses.location_id = ? AND accesses.title = ?",
-                        BeanPropertyRowMapper.newInstance(User.class), locationId, title);
-                users.removeIf(user -> user.getId().equals(id));
-                return users;
+                return jdbcTemplate.query("SELECT users.id,users.name,users.username FROM users JOIN accesses ON users.id = accesses.user_id WHERE accesses.location_id = ? AND accesses.title = ? AND users.id != ?",
+                        BeanPropertyRowMapper.newInstance(User.class), locationId, title, userId);
             } catch (IncorrectResultSizeDataAccessException e) {
                 return null;
             }
         });
     }
 
-
     @Async
-    public CompletableFuture<User> findLocationOwner(Long locationId, Long id) {
+    public CompletableFuture<User> findLocationOwner(Long locationId) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Long ownerId = jdbcTemplate.queryForObject("SELECT user_id FROM locations WHERE id = ?",
                         Long.class, locationId);
-                User owner = findById(ownerId).join();
-                if (owner.getId().equals(id)) {
-                    return null;
-                }
-                return owner;
+                return findById(ownerId).join();
             } catch (IncorrectResultSizeDataAccessException e) {
                 return null;
             }

@@ -1,99 +1,127 @@
 package com.example.locationsystem.user
 
-import com.example.locationsystem.location.Location
-import com.example.locationsystem.role.RoleRepository
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import spock.lang.Specification
 
-@SpringBootTest
+import java.util.concurrent.CompletableFuture
+
 class UserServiceTest extends Specification {
 
-    @Autowired
+    UserDao userDao
+
     UserService userService
 
-    @Autowired
-    UserRepository userRepository
-
-    @Autowired
-    RoleRepository roleRepository
-
-    @Autowired
-    BCryptPasswordEncoder bCryptPasswordEncoder
-
-    def user1 = new User("test@gmail.com", "test", "1234", 1)
-    def user2 = new User("test2@gmail.com", "test", "1234", 1)
-    def user3 = new User("test3@gmail.com", "test", "1234", 1)
-
-    def location = new Location("test", "test", user1)
-
-    def users = new ArrayList<>()
+    def expectedUser = new User(1L,"user1","name1","pass1")
+    def expectedUser2 = new User(2L,"user2","name2","pass2")
+    def userList = new ArrayList()
 
 
-    void setup() {
-        userRepository = Mock()
-        roleRepository = Mock()
-        bCryptPasswordEncoder = new BCryptPasswordEncoder()
-        userService = new UserServiceImpl(userRepository, roleRepository, bCryptPasswordEncoder)
+    def setup() {
+        userDao = Mock(UserDao)
+        userService = new UserServiceImpl(userDao)
 
-        user1.setId(1L)
-        user2.setId(2L)
-        user3.setId(3L)
-
-        location.setId(1L)
-
+        userList << expectedUser
     }
 
-    def "should find by username"() {
+    def "findByUsername should return User"() {
         given:
-        userRepository.findByUsername(user1.username) >> user1
+        userDao.findByUsername(expectedUser.username) >> CompletableFuture.completedFuture(expectedUser)
 
         when:
-        User result = userService.findByUserName(user1.username)
+        def result = userService.findByUsername(expectedUser.username)
 
         then:
-        user1.getUsername() == result.getUsername()
+        def user = result.get()
+        user == expectedUser
     }
 
-    def "should find users to share locations"() {
+    def "findByUsernameAndPassword should return User"() {
         given:
-        users << user1
-        userRepository.findAllByIdNotLike(user2.id) >> users
+        userDao.findUserByUsernameAndPassword(expectedUser.username,expectedUser.password) >> CompletableFuture.completedFuture(expectedUser)
 
         when:
-        List<User> result = userService.findUsersToShare(user2.id)
+        def result = userService.findUserByUsernameAndPassword(expectedUser.username,expectedUser.password)
 
         then:
-        users == result
+        def user = result.get()
+        user == expectedUser
     }
 
-    def "should find all users with access on location"() {
+    def "saveUser should insert User into database"() {
         given:
-        users << user2
-        users << user3
-        def users2 = new ArrayList<>()
-        users2 << user3
-        userRepository.findAllUsersWithAccessOnLocation(location.id, "READ") >> users
+        userDao.saveUser(expectedUser) >> CompletableFuture.completedFuture(null)
 
         when:
-        List<User> result = userService.findAllUsersWithAccessOnLocation(location.id, "READ", user2.id)
+        def result = userService.saveUser(expectedUser)
 
         then:
-        users2 == result
+        def saveResult = result?.get()
+        saveResult == null
+        1 * userDao.saveUser(expectedUser)
     }
 
-    def "should find location owner"() {
+    def "findById should return User"() {
         given:
-        userRepository.findUserByLocationId(location.id) >> user1
+        userDao.findById(expectedUser.id) >> CompletableFuture.completedFuture(expectedUser)
 
         when:
-        User result = userService.findLocationOwner(location.id,user1.id)
-        User result2 = userService.findLocationOwner(location.id,user2.id)
+        def result = userService.findById(expectedUser.id)
 
         then:
-        result == null
-        result2 == user1
+        def user = result.get()
+        user == expectedUser
     }
+
+    def "findUsersToShare should return Users"() {
+        given:
+        userDao.findUsersToShare(expectedUser2.id) >> CompletableFuture.completedFuture(userList)
+
+        when:
+        def result = userService.findUsersToShare(expectedUser2.id)
+
+        then:
+        def users = result.get()
+        users == userList
+    }
+
+    def "findAllUsersWithAccessOnLocation should return Users"() {
+        given:
+        userDao.findAllUsersWithAccessOnLocation(1L,"ADMIN",expectedUser2.id) >> CompletableFuture.completedFuture(userList)
+
+        when:
+        def result = userService.findAllUsersWithAccessOnLocation(1L,"ADMIN",expectedUser2.id)
+
+        then:
+        def users = result.get()
+        users == userList
+    }
+
+    def "should return null if owner is found and Id's match"() {
+        given:
+        Long locationId = 1L
+        Long id = 10L
+        User owner = new User(id,"username10","name10","pass10")
+        userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(owner)
+
+        when:
+        def result = userService.findLocationOwner(locationId,id)
+
+        then:
+        result.get() == null
+    }
+
+    def "should return owner if owner is found and Id's don't match"() {
+        given:
+        Long locationId = 1L
+        Long id = 10L
+        Long ownerId = 11L
+        User owner = new User(ownerId,"username10","name10","pass10")
+        userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(owner)
+
+        when:
+        def result = userService.findLocationOwner(locationId,id)
+
+        then:
+        result.get() == owner
+    }
+
 }
-

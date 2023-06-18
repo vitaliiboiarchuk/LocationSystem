@@ -15,7 +15,7 @@ public interface UserService {
 
     CompletableFuture<List<User>> findUsersToShare(Long id);
 
-    CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id);
+    CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, String title, Long userId);
 
     CompletableFuture<User> findLocationOwner(Long locationId, Long id);
 

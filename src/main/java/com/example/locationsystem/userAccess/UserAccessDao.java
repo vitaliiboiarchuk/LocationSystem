@@ -1,5 +1,6 @@
 package com.example.locationsystem.userAccess;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -26,16 +27,19 @@ public class UserAccessDao {
 
     @Async
     public CompletableFuture<Void> changeUserAccess(Long locationId, Long userId) {
-        return CompletableFuture.runAsync(() -> {
-            UserAccess access = jdbcTemplate.queryForObject("SELECT * FROM accesses WHERE location_id = ? AND user_id = ?",
-                    BeanPropertyRowMapper.newInstance(UserAccess.class), locationId, userId);
-            if (access != null) {
-                if (access.getTitle().equals("READ")) {
-                    jdbcTemplate.update("UPDATE accesses SET title = 'ADMIN' WHERE location_id = ? AND user_id = ?", locationId, userId);
-                } else if (access.getTitle().equals("ADMIN")) {
-                    jdbcTemplate.update("UPDATE accesses SET title = 'READ' WHERE location_id = ? AND user_id = ?", locationId, userId);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                UserAccess userAccess = jdbcTemplate.queryForObject("SELECT * FROM accesses WHERE location_id = ? AND user_id = ?",
+                        BeanPropertyRowMapper.newInstance(UserAccess.class), locationId, userId);
+                if (userAccess != null) {
+                    String newTitle = userAccess.getTitle().equals("ADMIN") ? "READ" : "ADMIN";
+                    jdbcTemplate.update("UPDATE accesses SET title = ? WHERE location_id = ? AND user_id = ?",
+                    newTitle,locationId,userId);
                 }
+            } catch (IncorrectResultSizeDataAccessException e) {
+                return null;
             }
+            return null;
         });
     }
 }

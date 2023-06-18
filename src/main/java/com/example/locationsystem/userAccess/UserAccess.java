@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserAccess {
 
+    @NonNull
     private Long id;
 
     @NonNull
