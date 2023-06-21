@@ -15,6 +15,7 @@ public class UserAccessServiceImpl implements UserAccessService {
 
     @Override
     public CompletableFuture<Void> saveUserAccess(UserAccess userAccess) {
+
         return userAccessDao.saveUserAccess(userAccess);
     }
 

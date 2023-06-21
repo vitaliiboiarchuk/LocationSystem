@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-
 @Data
 @RequiredArgsConstructor
 public class UserAccess {
@@ -24,6 +23,7 @@ public class UserAccess {
     Location location;
 
     public UserAccess() {
+
     }
 }
 

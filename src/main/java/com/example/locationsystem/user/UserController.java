@@ -1,88 +1,80 @@
 package com.example.locationsystem.user;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.WebUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import java.util.concurrent.CompletableFuture;
 
-@Controller
+@RestController
 public class UserController {
 
     private final UserService userService;
 
     public UserController(UserService userService) {
+
         this.userService = userService;
     }
 
-    @RequestMapping("/")
-    public CompletableFuture<String> home(HttpServletRequest request, Model model) {
-        return CompletableFuture.supplyAsync(() -> {
-            Cookie cookie = WebUtils.getCookie(request, "user");
-            if (cookie != null) {
-                model.addAttribute("myProfile", true);
-            } else {
-                model.addAttribute("welcomePage", true);
-            }
-            return "homePage";
-        });
-    }
+    private boolean isValidEmail(String email) {
 
-    @GetMapping("/registration")
-    public String registerGet(Model model) {
-        model.addAttribute("user", new User());
-        return "entry/registration";
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+        return email.matches(emailRegex);
     }
 
     @PostMapping("/registration")
-    public CompletableFuture<String> registerPost(@Valid User user) {
-        return userService.findByUsername(user.getUsername()).thenComposeAsync(existingUser -> {
-            if (existingUser != null || user.getUsername().isEmpty() || user.getPassword().isEmpty()) {
-                return CompletableFuture.completedFuture("redirect:/registration?error=true");
+    public CompletableFuture<ResponseEntity<String>> registerPost(@RequestBody User user) {
+
+        CompletableFuture<User> userFuture = userService.findByUsername(user.getUsername());
+
+        return userFuture.thenApplyAsync(existingUser -> {
+            if (existingUser != null) {
+                return ResponseEntity.badRequest().body("User already exists");
+            } else if (user.getUsername().isEmpty() || user.getPassword().isEmpty()) {
+                return ResponseEntity.badRequest().body("Fields username and password can not be empty");
+            } else if (!isValidEmail(user.getUsername())) {
+                return ResponseEntity.badRequest().body("Invalid email format");
             } else {
-                return userService.saveUser(user).thenApplyAsync(savedUser -> "redirect:/login");
+                userService.saveUser(user);
+                return ResponseEntity.ok("User registered successfully");
             }
         });
-    }
-
-    @GetMapping("/login")
-    public String loginGet(@Valid User user, Model model) {
-        model.addAttribute("user", user);
-        return "entry/login";
     }
 
     @PostMapping("/login")
-    public CompletableFuture<String> loginPost(@RequestParam("username") String username, @RequestParam("password") String
-            password, HttpServletResponse response) {
-        return userService.findUserByUsernameAndPassword(username, password).thenApplyAsync(user -> {
-            if (user != null) {
-                Cookie cookie = new Cookie("user", user.getId().toString());
+    public CompletableFuture<ResponseEntity<String>> loginPost(@RequestBody User user, HttpServletResponse response) {
+
+        CompletableFuture<User> userFuture = userService.findUserByUsernameAndPassword(user.getUsername(),
+            user.getPassword());
+
+        return userFuture.thenApplyAsync(existingUser -> {
+            if (existingUser != null) {
+                Cookie cookie = new Cookie("user", existingUser.getId().toString());
                 cookie.setPath("/");
                 response.addCookie(cookie);
-                return "redirect:/";
+                return ResponseEntity.ok("Logged in successfully");
             } else {
-                return "redirect:/login?error=true";
+                return ResponseEntity.badRequest().body("Log in failed");
             }
         });
     }
 
-    @RequestMapping("/logout")
-    public CompletableFuture<String> logout(HttpServletRequest request, HttpServletResponse response) {
+    @GetMapping("/logout")
+    public CompletableFuture<ResponseEntity<String>> logout(HttpServletRequest request, HttpServletResponse response) {
+
         return CompletableFuture.supplyAsync(() -> {
             Cookie cookie = WebUtils.getCookie(request, "user");
             if (cookie != null) {
                 cookie.setMaxAge(0);
                 response.addCookie(cookie);
             }
-            return "redirect:/";
+            return ResponseEntity.ok("Logged out successfully");
         });
     }
 }

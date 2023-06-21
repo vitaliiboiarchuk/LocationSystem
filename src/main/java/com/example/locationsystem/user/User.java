@@ -1,10 +1,8 @@
 package com.example.locationsystem.user;
 
-
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-
 
 @Data
 @RequiredArgsConstructor
@@ -23,6 +21,6 @@ public class User {
     private String password;
 
     public User() {
-    }
 
+    }
 }

@@ -13,10 +13,7 @@ public interface UserService {
 
     CompletableFuture<User> findById(Long id);
 
-    CompletableFuture<List<User>> findUsersToShare(Long id);
-
     CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, String title, Long userId);
 
     CompletableFuture<User> findLocationOwner(Long locationId, Long id);
-
 }

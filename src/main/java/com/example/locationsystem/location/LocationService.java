@@ -17,4 +17,5 @@ public interface LocationService {
 
     CompletableFuture<Void> deleteLocation(Long id, Long userId);
 
+    CompletableFuture<Location> findById(Long id);
 }

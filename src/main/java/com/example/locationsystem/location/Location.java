@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-
 @Data
 @RequiredArgsConstructor
 public class Location {
@@ -23,6 +22,7 @@ public class Location {
     private User user;
 
     public Location() {
+
     }
 }
 
