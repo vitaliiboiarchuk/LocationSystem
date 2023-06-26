@@ -12,114 +12,122 @@ class UserServiceTest extends Specification {
     @Subject
     UserService userService
 
-    User expectedUser
-
-    User expectedUser2
-
-    List<User> userList
+    User user
 
     def setup() {
 
         userDao = Mock(UserDao)
         userService = new UserServiceImpl(userDao)
 
-        expectedUser = new User(1L, "user1", "name1", "pass1")
-        expectedUser2 = new User(2L, "user2", "name2", "pass2")
-
-        userList = new ArrayList()
-
-        userList << expectedUser
+        user = new User(1L, "user1", "name1", "pass1")
     }
 
     def "findByUsername should return User"() {
 
         given:
-            userDao.findByUsername(expectedUser.getUsername()) >> CompletableFuture.completedFuture(expectedUser)
+            userDao.findByUsername(user.getUsername()) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findByUsername(expectedUser.getUsername())
+            def result = userService.findByUsername(user.getUsername())
 
         then:
             def user = result.get()
-            user == expectedUser
+            user == user
     }
 
     def "findByUsernameAndPassword should return User"() {
 
         given:
-            userDao.findUserByUsernameAndPassword(expectedUser.getUsername(), expectedUser.getPassword()) >> CompletableFuture.completedFuture(expectedUser)
+            userDao.findUserByUsernameAndPassword(user.getUsername(), user.getPassword()) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findUserByUsernameAndPassword(expectedUser.getUsername(), expectedUser.getPassword())
+            def result = userService.findUserByUsernameAndPassword(user.getUsername(), user.getPassword())
 
         then:
             def user = result.get()
-            user == expectedUser
+            user == user
     }
 
     def "saveUser should insert User into database"() {
 
         given:
-            userDao.saveUser(expectedUser) >> CompletableFuture.completedFuture(null)
+            userDao.saveUser(user) >> CompletableFuture.completedFuture(null)
 
         when:
-            def result = userService.saveUser(expectedUser)
+            def result = userService.saveUser(user)
 
         then:
             def saveResult = result?.get()
             saveResult == null
-            1 * userDao.saveUser(expectedUser)
+            1 * userDao.saveUser(user)
     }
 
     def "findById should return User"() {
 
         given:
-            userDao.findById(expectedUser.getId()) >> CompletableFuture.completedFuture(expectedUser)
+            userDao.findById(user.getId()) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findById(expectedUser.getId())
+            def result = userService.findById(user.getId())
 
         then:
             def user = result.get()
-            user == expectedUser
+            user == user
     }
 
     def "findAllUsersWithAccessOnLocation should return Users"() {
 
         given:
-            userDao.findAllUsersWithAccessOnLocation(1L, "ADMIN", expectedUser2.getId()) >> CompletableFuture.completedFuture(userList)
+            def adminAccessUser = new User(3L, "name", "name", "pass")
+            def readAccessUser = new User(4L, "name", "name", "pass")
+            def adminAccessUsers = [adminAccessUser]
+            def readAccessUsers = [readAccessUser]
+            def allAccessUsers = adminAccessUsers + readAccessUsers
+            userDao.findAllUsersWithAccessOnLocation(1L, "ADMIN", user.getId()) >> CompletableFuture.completedFuture(adminAccessUsers)
+            userDao.findAllUsersWithAccessOnLocation(1L, "READ", user.getId()) >> CompletableFuture.completedFuture(readAccessUsers)
 
         when:
-            def result = userService.findAllUsersWithAccessOnLocation(1L, "ADMIN", expectedUser2.getId())
+            def result = userService.findAllUsersWithAccessOnLocation(1L, user.getId())
 
         then:
             def users = result.get()
-            users == userList
+            users == allAccessUsers
     }
 
-    def "should return null if owner is found and Id's match"() {
+    def "should return null if owner is found and ID's not match"() {
 
         given:
-            User owner = new User(10L, "username10", "name10", "pass10")
-            userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(owner)
+            User otherOwner = new User(11L, "username11", "name11", "pass11")
+            userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(otherOwner)
 
         when:
-            def result = userService.findLocationOwner(1L, owner.getId())
+            def result = userService.findLocationOwner(1L, user.getId())
 
         then:
             result.get() == null
     }
 
-    def "should return owner if owner is found and Id's not match"() {
+    def "should return null if owner is not found"() {
 
         given:
-            User owner = new User(11L, "username10", "name10", "pass10")
-            userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(owner)
+            userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(null)
 
         when:
-            def result = userService.findLocationOwner(1L, 10L)
+            def result = userService.findLocationOwner(1L, user.getId())
 
         then:
-            result.get() == owner
+            result.get() == null
+    }
+
+    def "should return owner if owner is found"() {
+
+        given:
+            userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(user)
+
+        when:
+            def result = userService.findLocationOwner(1L, user.getId())
+
+        then:
+            result.get() == user
     }
 }

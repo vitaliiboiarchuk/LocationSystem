@@ -18,4 +18,6 @@ public interface LocationService {
     CompletableFuture<Void> deleteLocation(Long id, Long userId);
 
     CompletableFuture<Location> findById(Long id);
+
+    CompletableFuture<List<Location>> findAllMyLocations(Long userId);
 }

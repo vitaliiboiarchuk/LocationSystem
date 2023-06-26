@@ -1,5 +1,8 @@
 package com.example.locationsystem.user;
 
+import lombok.extern.log4j.Log4j2;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,7 +15,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.concurrent.CompletableFuture;
 
+import com.example.locationsystem.user.UserControllerExceptions.*;
+
 @RestController
+@Log4j2
 public class UserController {
 
     private final UserService userService;
@@ -29,52 +35,63 @@ public class UserController {
     }
 
     @PostMapping("/registration")
-    public CompletableFuture<ResponseEntity<String>> registerPost(@RequestBody User user) {
+    public CompletableFuture<ResponseEntity<User>> registerPost(@RequestBody User user) {
 
-        CompletableFuture<User> userFuture = userService.findByUsername(user.getUsername());
-
-        return userFuture.thenApplyAsync(existingUser -> {
-            if (existingUser != null) {
-                return ResponseEntity.badRequest().body("User already exists");
-            } else if (user.getUsername().isEmpty() || user.getPassword().isEmpty()) {
-                return ResponseEntity.badRequest().body("Fields username and password can not be empty");
-            } else if (!isValidEmail(user.getUsername())) {
-                return ResponseEntity.badRequest().body("Invalid email format");
-            } else {
-                userService.saveUser(user);
-                return ResponseEntity.ok("User registered successfully");
-            }
-        });
+        log.info("Registration request received for user: {}", user.getUsername());
+        return userService.findByUsername(user.getUsername())
+            .thenApplyAsync(existingUser -> {
+                if (existingUser != null) {
+                    log.warn("Registration failed. User {} already exists", user.getUsername());
+                    throw new AlreadyExistsException("User already exists");
+                } else if (user.getUsername().isEmpty() || user.getPassword().isEmpty()) {
+                    log.warn("Registration failed. Empty fields");
+                    throw new EmptyFieldException("Fields can not be empty");
+                } else if (!isValidEmail(user.getUsername())) {
+                    log.warn("Registration failed. Invalid email format: {}", user.getUsername());
+                    throw new InvalidEmailException("Invalid email format");
+                } else {
+                    userService.saveUser(user);
+                    log.info("Registration successful for user: {}", user.getUsername());
+                    return ResponseEntity.ok(user);
+                }
+            });
     }
 
     @PostMapping("/login")
-    public CompletableFuture<ResponseEntity<String>> loginPost(@RequestBody User user, HttpServletResponse response) {
+    public CompletableFuture<ResponseEntity<User>> loginPost(@RequestBody User user, HttpServletResponse response) {
 
-        CompletableFuture<User> userFuture = userService.findUserByUsernameAndPassword(user.getUsername(),
-            user.getPassword());
-
-        return userFuture.thenApplyAsync(existingUser -> {
-            if (existingUser != null) {
+        log.info("Login request received for user: {}", user.getUsername());
+        return userService.findUserByUsernameAndPassword(user.getUsername(), user.getPassword())
+            .thenApplyAsync(existingUser -> {
+                if (existingUser == null) {
+                    log.warn("Login failed. Invalid login or password for user: {}", user.getUsername());
+                    throw new InvalidLoginOrPasswordException("Invalid login or password");
+                }
                 Cookie cookie = new Cookie("user", existingUser.getId().toString());
                 cookie.setPath("/");
                 response.addCookie(cookie);
-                return ResponseEntity.ok("Logged in successfully");
-            } else {
-                return ResponseEntity.badRequest().body("Log in failed");
-            }
-        });
+                log.info("Login successful for user: {}", user.getUsername());
+                return ResponseEntity.ok(user);
+            });
     }
 
     @GetMapping("/logout")
     public CompletableFuture<ResponseEntity<String>> logout(HttpServletRequest request, HttpServletResponse response) {
 
+        log.info("Logout request received");
         return CompletableFuture.supplyAsync(() -> {
             Cookie cookie = WebUtils.getCookie(request, "user");
-            if (cookie != null) {
-                cookie.setMaxAge(0);
-                response.addCookie(cookie);
+            if (cookie == null) {
+                log.warn("Logout failed. User not logged in");
+                throw new NotLoggedInException("Not logged in");
             }
-            return ResponseEntity.ok("Logged out successfully");
+            cookie.setMaxAge(0);
+            response.addCookie(cookie);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("message", "Logged out successfully");
+            log.info("Logout successful");
+            return ResponseEntity.ok().headers(headers).build();
         });
     }
 }
