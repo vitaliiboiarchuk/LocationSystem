@@ -14,9 +14,8 @@ class LocationServiceTest extends Specification {
     LocationService locationService
 
     User user
-
+    User user2
     Location loc
-
     List<Location> locs
 
     def setup() {
@@ -26,6 +25,9 @@ class LocationServiceTest extends Specification {
 
         user = new User(1L, "user1", "user1", "pass1")
         loc = new Location(1L, "name1", "add1", user)
+
+        user2 = new User(2L, "user2", "user2", "pass2")
+
 
         locs = new ArrayList()
         locs << loc
@@ -74,7 +76,6 @@ class LocationServiceTest extends Specification {
     def "findAllLocationsWithAccess should return locations"() {
 
         given:
-            def user2 = new User(2L, "user2", "user2", "pass2")
             locationDao.findAllLocationsWithAccess(user2.getId(), "ADMIN") >> CompletableFuture.completedFuture(locs)
 
         when:
@@ -102,7 +103,6 @@ class LocationServiceTest extends Specification {
     def "should find not shared locations to user"() {
 
         given:
-            def user2 = new User(2L, "user2", "user2", "pass2")
             locationDao.findNotSharedToUserLocations(user.getId(), user2.getId()) >> CompletableFuture.completedFuture(locs)
 
         when:
@@ -126,4 +126,25 @@ class LocationServiceTest extends Specification {
             loc == location
     }
 
+    def "should find all my locations"() {
+
+        given:
+            def adminAccessLoc = new Location(2L, "name2", "add2", user2)
+            def readAccessLoc = new Location(3L, "name3", "add3", user2)
+            def adminAccessLocs = [adminAccessLoc]
+            def readAccessLocs = [readAccessLoc]
+
+            def allMyLocs = locs + adminAccessLocs + readAccessLocs
+
+            locationDao.findAllAddedLocations(user.getId()) >> CompletableFuture.completedFuture(locs)
+            locationDao.findAllLocationsWithAccess(user.getId(), "ADMIN") >> CompletableFuture.completedFuture(adminAccessLocs)
+            locationDao.findAllLocationsWithAccess(user.getId(), "READ") >> CompletableFuture.completedFuture(readAccessLocs)
+
+        when:
+            def result = locationService.findAllMyLocations(user.getId())
+
+        then:
+            def locations = result.get()
+            locations == allMyLocs
+    }
 }

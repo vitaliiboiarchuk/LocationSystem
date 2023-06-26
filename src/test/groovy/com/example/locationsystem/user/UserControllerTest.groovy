@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc
 import spock.lang.Specification
 import org.springframework.http.MediaType
 
+import javax.servlet.http.Cookie
 import java.util.concurrent.CompletableFuture
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -24,13 +25,19 @@ class UserControllerTest extends Specification {
     @SpringBean
     UserService userService = Mock()
 
-    def "should return user registration failed message when user already exists"() {
+    User user
+
+    def setup() {
+
+        user = new User(30L, "exists@gmail.com", "user30", "pass30")
+    }
+
+    def "should throw UserAlreadyExistsException when user already exists"() {
 
         given:
-            def user = new User(30L, "exists@gmail.com", "user30", "pass30")
             userService.findByUsername(user.getUsername()) >> CompletableFuture.completedFuture(user)
 
-        expect:
+        when:
             def mvcResult = mockMvc.perform(post("/registration")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(user)))
@@ -39,16 +46,19 @@ class UserControllerTest extends Specification {
 
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("User already exists"))
+                .andExpect(header().string("errorMessage", "User already exists"))
+
+        then:
+            0 * userService.saveUser(user)
     }
 
-    def "should return user registration failed message when field is empty"() {
+    def "should throw EmptyFieldException when field is empty"() {
 
         given:
             def user = new User(30L, "", "user30", "pass30")
             userService.findByUsername(user.getUsername()) >> CompletableFuture.completedFuture(null)
 
-        expect:
+        when:
             def mvcResult = mockMvc.perform(post("/registration")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(user)))
@@ -57,16 +67,19 @@ class UserControllerTest extends Specification {
 
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Fields username and password can not be empty"))
+                .andExpect(header().string("errorMessage", "Fields can not be empty"))
+
+        then:
+            0 * userService.saveUser(user)
     }
 
-    def "should return user registration failed message when invalid email format"() {
+    def "should throw InvalidEmailException when email is invalid"() {
 
         given:
             def user = new User(30L, "boyar", "user30", "pass30")
             userService.findByUsername(user.getUsername()) >> CompletableFuture.completedFuture(null)
 
-        expect:
+        when:
             def mvcResult = mockMvc.perform(post("/registration")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(user)))
@@ -75,17 +88,19 @@ class UserControllerTest extends Specification {
 
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Invalid email format"))
+                .andExpect(header().string("errorMessage", "Invalid email format"))
+
+        then:
+            0 * userService.saveUser(user)
     }
 
     def "should register user successfully"() {
 
         given:
-            def user = new User(30L, "test@gmail.com", "user30", "pass30")
             userService.findByUsername(user.getUsername()) >> CompletableFuture.completedFuture(null)
             userService.saveUser(user) >> CompletableFuture.completedFuture(null)
 
-        expect:
+        when:
             def mvcResult = mockMvc.perform(post("/registration")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(user)))
@@ -94,13 +109,15 @@ class UserControllerTest extends Specification {
 
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
-                .andExpect(content().string("User registered successfully"))
+                .andExpect(content().json(new ObjectMapper().writeValueAsString(user), true))
+
+        then:
+            1 * userService.saveUser(user)
     }
 
-    def "should return log in failed message when login fails"() {
+    def "should throw InvalidLoginOrPasswordException when login or password is invalid"() {
 
         given:
-            def user = new User(30L, "test@gmail.com", "use30", "pass")
             userService.findUserByUsernameAndPassword(user.getUsername(), user.getPassword()) >> CompletableFuture.completedFuture(null)
 
         expect:
@@ -112,13 +129,12 @@ class UserControllerTest extends Specification {
 
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Log in failed"))
+                .andExpect(header().string("errorMessage", "Invalid login or password"))
     }
 
     def "should login successfully"() {
 
         given:
-            def user = new User(30L, "test@gmail.com", "use30", "pass30")
             userService.findUserByUsernameAndPassword(user.getUsername(), user.getPassword()) >> CompletableFuture.completedFuture(user)
 
         expect:
@@ -131,10 +147,10 @@ class UserControllerTest extends Specification {
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("user"))
-                .andExpect(content().string("Logged in successfully"))
+                .andExpect(content().json(new ObjectMapper().writeValueAsString(user), true))
     }
 
-    def "should log out successfully"() {
+    def "should throw NotLoggedInException when user not logged in"() {
 
         expect:
             def mvcResult = mockMvc.perform(get("/logout"))
@@ -142,9 +158,22 @@ class UserControllerTest extends Specification {
                 .andReturn()
 
             mockMvc.perform(asyncDispatch(mvcResult))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(cookie().doesNotExist("user"))
-                .andExpect(content().string("Logged out successfully"))
+                .andExpect(header().string("errorMessage", "Not logged in"))
+    }
+
+    def "should log out successfully"() {
+
+        expect:
+            def mvcResult = mockMvc.perform(get("/logout").cookie(new Cookie("user", "1")))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+            mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("user", 0))
+                .andExpect(header().string("message", "Logged out successfully"))
     }
 }
 

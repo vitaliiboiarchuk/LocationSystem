@@ -27,6 +27,19 @@ class UserAccessDaoTest extends Specification {
 
         jdbcTemplate = new JdbcTemplate(dataSource)
         userAccessDao = new UserAccessDao(jdbcTemplate)
+
+        jdbcTemplate.execute("INSERT INTO users(id,username,name,password) VALUES(1,'user1','name1','pass1')")
+        jdbcTemplate.execute("INSERT INTO users(id,username,name,password) VALUES(2,'user2','name2','pass2')")
+        jdbcTemplate.execute("INSERT INTO locations(id,name,address,user_id) VALUES(1,'name1','add1',1)")
+        jdbcTemplate.execute("INSERT INTO accesses(id,title,location_id,user_id) VALUES(1,'ADMIN',1,2)")
+    }
+
+    def cleanup() {
+
+        jdbcTemplate.execute("DELETE FROM accesses WHERE id = 1")
+        jdbcTemplate.execute("DELETE FROM locations WHERE id = 1")
+        jdbcTemplate.execute("DELETE FROM users WHERE id = 1")
+        jdbcTemplate.execute("DELETE FROM users WHERE id = 2")
     }
 
     def "should save user access"() {
@@ -58,26 +71,25 @@ class UserAccessDaoTest extends Specification {
             jdbcTemplate.execute("DELETE FROM users WHERE id = 6")
     }
 
-    def "should change user access"() {
-
-        given:
-            jdbcTemplate.execute("INSERT INTO users(id,username,name,password) VALUES(1,'user1','name1','pass1')")
-            jdbcTemplate.execute("INSERT INTO users(id,username,name,password) VALUES(2,'user2','name2','pass2')")
-            jdbcTemplate.execute("INSERT INTO locations(id,name,address,user_id) VALUES(1,'name1','add1',1)")
-            jdbcTemplate.execute("INSERT INTO accesses(id,title,location_id,user_id) VALUES(1,'ADMIN',1,2)")
+    def "should find user access"() {
 
         when:
-            CompletableFuture<Void> result = userAccessDao.changeUserAccess(1L, 2L)
+        CompletableFuture<UserAccess> result = userAccessDao.findUserAccess(1L,2L)
+
+        then:
+        UserAccess userAccess = result.get()
+        userAccess.getId() == 1L
+        userAccess.getTitle() == 'ADMIN'
+    }
+
+    def "should change user access"() {
+
+        when:
+            CompletableFuture<Void> result = userAccessDao.changeUserAccess("READ", 1L, 2L)
 
         then:
             result.get() == null
             String newTitle = jdbcTemplate.queryForObject("SELECT title FROM accesses WHERE location_id = ? AND user_id = ?", String.class, 1L, 2L)
             newTitle == "READ"
-
-        cleanup:
-            jdbcTemplate.execute("DELETE FROM accesses WHERE id = 1")
-            jdbcTemplate.execute("DELETE FROM locations WHERE id = 1")
-            jdbcTemplate.execute("DELETE FROM users WHERE id = 1")
-            jdbcTemplate.execute("DELETE FROM users WHERE id = 2")
     }
 }

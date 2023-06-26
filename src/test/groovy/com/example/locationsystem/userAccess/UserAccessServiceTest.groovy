@@ -15,10 +15,9 @@ class UserAccessServiceTest extends Specification {
     UserAccessService userAccessService
 
     User user
-
     User user2
-
     Location loc
+    UserAccess userAccess
 
     def setup() {
 
@@ -28,6 +27,7 @@ class UserAccessServiceTest extends Specification {
         user = new User(1L, "user1", "user1", "pass1")
         user2 = new User(2L, "user2", "user2", "pass2")
         loc = new Location(1L, "name1", "add1", user)
+        userAccess = new UserAccess(1L, "ADMIN", user2, loc)
     }
 
     def "should insert user access into database"() {
@@ -46,10 +46,24 @@ class UserAccessServiceTest extends Specification {
             1 * userAccessDao.saveUserAccess(userAccess)
     }
 
+    def "should find user access"() {
+
+        given:
+            userAccessDao.findUserAccess(loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(userAccess)
+
+        when:
+            def result = userAccessService.findUserAccess(loc.getId(), user2.getId())
+
+        then:
+            UserAccess access = result.get()
+            access.getTitle() == 'ADMIN'
+    }
+
     def "should change user access"() {
 
         given:
-            userAccessDao.changeUserAccess(loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(null)
+            userAccessDao.findUserAccess(loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(userAccess)
+            userAccessDao.changeUserAccess(userAccess.getTitle(), loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(null)
 
         when:
             def result = userAccessService.changeUserAccess(loc.getId(), user2.getId())
@@ -58,6 +72,6 @@ class UserAccessServiceTest extends Specification {
             def saveResult = result?.get()
             saveResult == null
 
-            1 * userAccessDao.changeUserAccess(loc.getId(), user2.getId())
+            1 * userAccessDao.changeUserAccess("READ", loc.getId(), user2.getId())
     }
 }
