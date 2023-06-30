@@ -1,6 +1,7 @@
 package com.example.locationsystem.user;
 
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -10,8 +11,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-@Log4j2
 public class UserDao {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,10 +28,10 @@ public class UserDao {
             try {
                 User user = jdbcTemplate.queryForObject("SELECT * FROM users WHERE username = ?",
                     BeanPropertyRowMapper.newInstance(User.class), username);
-                log.info("User found by username");
+                LOGGER.info("User found by username");
                 return user;
             } catch (IncorrectResultSizeDataAccessException e) {
-                log.warn("User not found by username");
+                LOGGER.warn("User not found by username");
                 return null;
             }
         });
@@ -42,10 +44,10 @@ public class UserDao {
                 String hashedPassword = jdbcTemplate.queryForObject("SELECT SHA2(?, 256)", String.class, password);
                 User user = jdbcTemplate.queryForObject("SELECT * FROM users WHERE username = ? and password = ?",
                     BeanPropertyRowMapper.newInstance(User.class), username, hashedPassword);
-                log.info("User found by username and password");
+                LOGGER.info("User found by username and password");
                 return user;
             } catch (IncorrectResultSizeDataAccessException e) {
-                log.warn("User not found by username and password");
+                LOGGER.warn("User not found by username and password");
                 return null;
             }
         });
@@ -58,7 +60,7 @@ public class UserDao {
                 user.getPassword());
             jdbcTemplate.update("INSERT INTO users (name,password,username) VALUES (?,?,?)",
                 user.getName(), hashedPassword, user.getUsername());
-            log.info("User saved: {}", user);
+            LOGGER.info("User saved: {}", user);
         });
     }
 
@@ -78,12 +80,12 @@ public class UserDao {
 
         return CompletableFuture.supplyAsync(() -> {
             try {
-                List<User> users = jdbcTemplate.query("SELECT users.id,users.name,users.username FROM users JOIN " +
+                List<User> users = jdbcTemplate.query("SELECT users.id,users.name,users.username,users.password FROM users JOIN " +
                         "accesses ON " +
                         "users.id = accesses.user_id WHERE accesses.location_id = ? AND accesses.title = ? AND users" +
                         ".id != ?",
                     BeanPropertyRowMapper.newInstance(User.class), locationId, title, userId);
-                log.info("Found all users with access on location. Location ID: {}, Title: {}, User ID: {}",
+                LOGGER.info("Found all users with access on location. Location ID: {}, Title: {}, User ID: {}",
                     locationId, title, userId);
                 return users;
             } catch (IncorrectResultSizeDataAccessException e) {
@@ -99,12 +101,23 @@ public class UserDao {
                 Long ownerId = jdbcTemplate.queryForObject("SELECT user_id FROM locations WHERE id = ?",
                     Long.class, locationId);
                 User owner = findById(ownerId).join();
-                log.info("Location owner found. Location ID: {}", locationId);
+                LOGGER.info("Location owner found. Location ID: {}", locationId);
                 return owner;
             } catch (IncorrectResultSizeDataAccessException e) {
-                log.warn("Location owner not found. Location ID: {}", locationId);
+                LOGGER.warn("Location owner not found. Location ID: {}", locationId);
                 return null;
             }
         });
+    }
+
+    public CompletableFuture<Void> deleteUserByUsername(String username) {
+
+        return CompletableFuture.runAsync(() ->
+                jdbcTemplate.update("DELETE FROM users WHERE username = ?", username))
+            .thenRun(() -> LOGGER.info("Deleted user by username: {}", username));
+    }
+
+    public Long getMaxIdFromUsers() {
+        return jdbcTemplate.queryForObject("SELECT MAX(id) FROM users",Long.class);
     }
 }

@@ -19,7 +19,8 @@ class UserServiceTest extends Specification {
         userDao = Mock(UserDao)
         userService = new UserServiceImpl(userDao)
 
-        user = new User(1L, "user1", "name1", "pass1")
+        user = new User("user1", "name1", "pass1")
+        user.setId(100L)
     }
 
     def "findByUsername should return User"() {
@@ -78,8 +79,8 @@ class UserServiceTest extends Specification {
     def "findAllUsersWithAccessOnLocation should return Users"() {
 
         given:
-            def adminAccessUser = new User(3L, "name", "name", "pass")
-            def readAccessUser = new User(4L, "name", "name", "pass")
+            def adminAccessUser = new User("name", "name", "pass")
+            def readAccessUser = new User("name", "name", "pass")
             def adminAccessUsers = [adminAccessUser]
             def readAccessUsers = [readAccessUser]
             def allAccessUsers = adminAccessUsers + readAccessUsers
@@ -97,7 +98,8 @@ class UserServiceTest extends Specification {
     def "should return null if owner is found and ID's not match"() {
 
         given:
-            User otherOwner = new User(11L, "username11", "name11", "pass11")
+            User otherOwner = new User("username11", "name11", "pass11")
+            otherOwner.setId(101L)
             userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(otherOwner)
 
         when:
@@ -129,5 +131,19 @@ class UserServiceTest extends Specification {
 
         then:
             result.get() == user
+    }
+
+    def "should delete user"() {
+
+        given:
+            userDao.deleteUserByUsername("test@gmail.com") >> CompletableFuture.completedFuture(null)
+
+        when:
+            def result = userService.deleteUserByUsername("test@gmail.com")
+
+        then:
+            def saveResult = result?.get()
+            saveResult == null
+            1 * userDao.deleteUserByUsername("test@gmail.com")
     }
 }

@@ -59,7 +59,7 @@ class UserDaoTest extends Specification {
     def "should save user"() {
 
         given:
-            User user = new User(4L, "user4", "name4", "pass4")
+            User user = new User("user4", "name4", "pass4")
 
         when:
             CompletableFuture<Void> futureResult = userDao.saveUser(user)
@@ -115,5 +115,22 @@ class UserDaoTest extends Specification {
         then:
             User owner = futureResult.get()
             owner.getName() == 'name1'
+    }
+
+    def "should delete user by username"() {
+
+        given:
+            jdbcTemplate.execute("INSERT INTO users(id,name,username,password) VALUES(100,'name1','test@gmail.com',SHA2('pass1',256))")
+
+        when:
+            CompletableFuture<Void> futureResult = userDao.deleteUserByUsername("test@gmail.com")
+
+        then:
+            futureResult.get() == null
+
+        and:
+
+            def deletedUser = jdbcTemplate.query("SELECT * FROM users WHERE username = ?", BeanPropertyRowMapper.newInstance(User.class), 100L)
+            deletedUser.isEmpty()
     }
 }

@@ -24,16 +24,16 @@ class UserAccessServiceTest extends Specification {
         userAccessDao = Mock(UserAccessDao)
         userAccessService = new UserAccessServiceImpl(userAccessDao)
 
-        user = new User(1L, "user1", "user1", "pass1")
-        user2 = new User(2L, "user2", "user2", "pass2")
-        loc = new Location(1L, "name1", "add1", user)
-        userAccess = new UserAccess(1L, "ADMIN", user2, loc)
+        user = new User("user1", "user1", "pass1")
+        user2 = new User("user2", "user2", "pass2")
+        loc = new Location("name1", "add1", user)
+        userAccess = new UserAccess("ADMIN", user2, loc)
     }
 
     def "should insert user access into database"() {
 
         given:
-            def userAccess = new UserAccess(1L, "title1", user2, loc)
+            def userAccess = new UserAccess("title1", user2, loc)
             userAccessDao.saveUserAccess(userAccess) >> CompletableFuture.completedFuture(null)
 
         when:

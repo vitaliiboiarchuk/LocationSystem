@@ -1,6 +1,7 @@
 package com.example.locationsystem.location;
 
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -10,8 +11,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-@Log4j2
 public class LocationDao {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocationDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,7 +28,7 @@ public class LocationDao {
             try {
                 List<Location> locations = jdbcTemplate.query("SELECT * FROM locations WHERE user_id = ?",
                     BeanPropertyRowMapper.newInstance(Location.class), id);
-                log.info("All added locations by user id found: {}", id);
+                LOGGER.info("All added locations by user id found: {}", id);
                 return locations;
             } catch (IncorrectResultSizeDataAccessException e) {
                 return null;
@@ -43,7 +45,7 @@ public class LocationDao {
                         "accesses ON locations.id = accesses.location_id WHERE accesses.user_id = ? AND accesses" +
                         ".title = ?",
                     BeanPropertyRowMapper.newInstance(Location.class), id, title);
-                log.info("All locations with access by user id and title found. User id: {}, Title: {}", id, title);
+                LOGGER.info("All locations with access by user id and title found. User id: {}, Title: {}", id, title);
                 return locations;
             } catch (IncorrectResultSizeDataAccessException e) {
                 return null;
@@ -58,10 +60,10 @@ public class LocationDao {
                 Location location = jdbcTemplate.queryForObject("SELECT * FROM locations WHERE name = ? AND user_id =" +
                         " ?",
                     BeanPropertyRowMapper.newInstance(Location.class), name, userId);
-                log.info("Found location by name and user id. Name: {}, User id: {}", name, userId);
+                LOGGER.info("Found location by name and user id. Name: {}, User id: {}", name, userId);
                 return location;
             } catch (IncorrectResultSizeDataAccessException e) {
-                log.warn("Location by name and user id not found. Name: {}, User id: {}", name, userId);
+                LOGGER.warn("Location by name and user id not found. Name: {}, User id: {}", name, userId);
                 return null;
             }
         });
@@ -72,7 +74,7 @@ public class LocationDao {
         return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update("INSERT INTO locations(name,address,user_id) VALUES (?,?,?)",
                 location.getName(), location.getAddress(), location.getUser().getId());
-            log.info("Location saved: {}", location);
+            LOGGER.info("Location saved: {}", location);
         });
     }
 
@@ -83,7 +85,7 @@ public class LocationDao {
         CompletableFuture<Void> deleteLocationsFuture = deleteAccessesFuture.thenComposeAsync((Void) ->
             CompletableFuture.runAsync(() ->
                 jdbcTemplate.update("DELETE FROM locations WHERE id = ? AND user_id = ?", id, userId)));
-        log.info("Location deleted by location id: {} and user id: {}", id, userId);
+        LOGGER.info("Location deleted by location id: {} and user id: {}", id, userId);
         return CompletableFuture.allOf(deleteAccessesFuture, deleteLocationsFuture);
     }
 
@@ -98,7 +100,7 @@ public class LocationDao {
                         "SELECT l.id FROM locations l JOIN accesses a ON l.id = a.location_id " +
                         "WHERE a.user_id = ? AND a.title IN ('ADMIN', 'READ')))",
                     BeanPropertyRowMapper.newInstance(Location.class), id, id, userId);
-                log.info("Found not shared to user locations with User id: {} and User to share id: {}", id, userId);
+                LOGGER.info("Found not shared to user locations with User id: {} and User to share id: {}", id, userId);
                 return locations;
             } catch (IncorrectResultSizeDataAccessException e) {
                 return null;
@@ -112,6 +114,18 @@ public class LocationDao {
             try {
                 return jdbcTemplate.queryForObject("SELECT * FROM locations WHERE id = ?",
                     BeanPropertyRowMapper.newInstance(Location.class), id);
+            } catch (IncorrectResultSizeDataAccessException e) {
+                return null;
+            }
+        });
+    }
+
+    public CompletableFuture<Location> findLocationByName(String name) {
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return jdbcTemplate.queryForObject("SELECT * FROM locations WHERE name = ?",
+                    BeanPropertyRowMapper.newInstance(Location.class), name);
             } catch (IncorrectResultSizeDataAccessException e) {
                 return null;
             }

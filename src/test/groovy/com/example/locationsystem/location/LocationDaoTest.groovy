@@ -29,7 +29,7 @@ class LocationDaoTest extends Specification {
         locationDao = new LocationDao(jdbcTemplate)
 
         jdbcTemplate.execute("INSERT INTO users(id,name,password,username) VALUES(1,'vitalii','pass1','vitalii'),(2,'natalia','pass2','natalia'),(3,'oleh','pass3','oleh')")
-        jdbcTemplate.execute("INSERT INTO locations(id,name,address,user_id) VALUES (1, 'home','krolowej marysienki',1),(2,'gym','naleczowska',1),(3,'swimming pool','sobieskiego',3)")
+        jdbcTemplate.execute("INSERT INTO locations(id,name,address,user_id) VALUES (1, 'home@gmail.com','test',1),(2,'gym','naleczowska',1),(3,'swimming pool','sobieskiego',3)")
         jdbcTemplate.execute("INSERT INTO accesses(id,title,location_id,user_id) VALUES(1,'ADMIN',1,2),(2,'READ',3,1)")
     }
 
@@ -53,7 +53,7 @@ class LocationDaoTest extends Specification {
         then:
             List<Location> locations = futureResult.get()
             locations.size() == 2
-            locations[0].getName() == 'home'
+            locations[0].getName() == 'home@gmail.com'
             locations[1].getName() == 'gym'
     }
 
@@ -65,7 +65,7 @@ class LocationDaoTest extends Specification {
         then:
             List<Location> locations = futureResult.get()
             locations.size() == 1
-            locations[0].getName() == 'home'
+            locations[0].getName() == 'home@gmail.com'
     }
 
     def "should find location by name and userId"() {
@@ -81,9 +81,9 @@ class LocationDaoTest extends Specification {
     def "should save location"() {
 
         given:
-            User user = new User(15L, "user1", "name1", "pass1")
+            User user = new User("user1", "name1", "pass1")
             jdbcTemplate.execute("INSERT INTO users(id,name,password,username) VALUES(15,'name1','pass1','user1')")
-            Location location = new Location(1L, "title1", "add1", user)
+            Location location = new Location("title1", "add1", user)
 
         when:
             CompletableFuture<Void> futureResult = locationDao.saveLocation(location)
@@ -98,7 +98,7 @@ class LocationDaoTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute("DELETE FROM locations WHERE name = 'title1'")
-            jdbcTemplate.execute("DELETE FROM users WHERE id = 15")
+            jdbcTemplate.execute("DELETE FROM users WHERE username = 'user1'")
     }
 
     def "should delete location"() {
@@ -138,6 +138,16 @@ class LocationDaoTest extends Specification {
 
         then:
             Location loc = futureResult.get()
-            loc.getName() == 'home'
+            loc.getName() == 'home@gmail.com'
+    }
+
+    def "should find location by name"() {
+
+        when:
+            CompletableFuture<Location> futureResult = locationDao.findLocationByName("home@gmail.com")
+
+        then:
+            Location loc = futureResult.get()
+            loc.getAddress() == 'test'
     }
 }

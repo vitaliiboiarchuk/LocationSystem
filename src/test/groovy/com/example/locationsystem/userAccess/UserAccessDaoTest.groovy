@@ -45,13 +45,13 @@ class UserAccessDaoTest extends Specification {
     def "should save user access"() {
 
         given:
-            User user = new User(5L, "test1", "test1", "test1")
-            User user2 = new User(6L, "test2", "test2", "test2")
+            User user = new User("test1", "test1", "test1")
+            User user2 = new User("test2", "test2", "test2")
             jdbcTemplate.execute("INSERT INTO users(id,username,password,name) VALUES(5,'user55','pass55','name55'),(6,'user56','pass56','name56')")
-            Location location = new Location(5L, "test1", "test1", user)
+            Location location = new Location("test1", "test1", user)
             jdbcTemplate.execute("INSERT INTO locations(id,name,address,user_id) VALUES(5,'loc56','add56',5)")
 
-            UserAccess userAccess = new UserAccess(5L, "Title11", user2, location)
+            UserAccess userAccess = new UserAccess("Title11", user2, location)
 
         when:
             CompletableFuture<Void> futureResult = userAccessDao.saveUserAccess(userAccess)
