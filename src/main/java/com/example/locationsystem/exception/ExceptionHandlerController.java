@@ -19,7 +19,7 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 @RestControllerAdvice
 public class ExceptionHandlerController {
 
-    private static final Logger log = LoggerFactory.getLogger(ExceptionHandlerController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionHandlerController.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Void> handleValidationException(MethodArgumentNotValidException ex) {
@@ -28,7 +28,7 @@ public class ExceptionHandlerController {
         String errorMessage = errors.stream()
             .map(DefaultMessageSourceResolvable::getDefaultMessage)
             .collect(Collectors.joining(", "));
-        log.warn("Failed: {}", errorMessage);
+        LOGGER.warn("Failed: {}", errorMessage);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

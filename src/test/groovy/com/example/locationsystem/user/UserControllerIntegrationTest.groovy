@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc
 import spock.lang.Specification
 
 import javax.servlet.http.Cookie
+import java.util.concurrent.CompletableFuture
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
@@ -26,13 +27,10 @@ class UserControllerIntegrationTest extends Specification {
     @Autowired
     UserDao userDao
 
-    User user
-
-    void setup() {
-        user = new User("test@gmail.com", "test", "pass")
-    }
-
     def "should register user successfully"() {
+
+        given:
+            User user = new User("test@gmail.com", "test", "pass")
 
         when:
             def mvcResult = mockMvc.perform(post("/registration")
@@ -54,14 +52,24 @@ class UserControllerIntegrationTest extends Specification {
             User savedUserDao = userDao.findByUsername(user.getUsername()).join()
             savedUserDao != null
             savedUserDao.getUsername() == user.getUsername()
+
+        cleanup:
+            userService.deleteUserByUsername(user.getUsername()).join()
     }
 
     def "should throw UserAlreadyExistsException when user already exists"() {
 
+        given:
+            User user = new User("test@gmail.com", "test", "pass")
+            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
+                .thenComposeAsync({ result -> userService.findByUsername(user.getUsername()) })
+
+            def savedUser = savedUserFuture.join()
+
         when:
             def mvcResult = mockMvc.perform(post("/registration")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(user)))
+                .content(new ObjectMapper().writeValueAsString(savedUser)))
                 .andExpect(request().asyncStarted())
                 .andReturn()
 
@@ -80,12 +88,15 @@ class UserControllerIntegrationTest extends Specification {
             savedUserDao != null
             savedUserDao.getUsername() == user.getUsername()
             0 * userDao.saveUser(user)
+
+        cleanup:
+            userService.deleteUserByUsername(user.getUsername()).join()
     }
 
     def "should throw MethodArgumentNotValidException when field is empty"() {
 
         given:
-            def user = new User("", "test", "pass")
+            User user = new User("", "test", "pass")
 
         when:
             def mvcResult = mockMvc.perform(post("/registration")
@@ -104,7 +115,7 @@ class UserControllerIntegrationTest extends Specification {
     def "should throw MethodArgumentNotValidException when invalid email format"() {
 
         given:
-            def user = new User("test", "test", "pass")
+            User user = new User("test", "test", "pass")
 
         when:
             def mvcResult = mockMvc.perform(post("/registration")
@@ -121,6 +132,13 @@ class UserControllerIntegrationTest extends Specification {
     }
 
     def "should login successfully"() {
+
+        given:
+            User user = new User("test@gmail.com", "test", "pass")
+            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
+                .thenComposeAsync({ result -> userService.findByUsername(user.getUsername()) })
+
+            def savedUser = savedUserFuture.join()
 
         when:
             def mvcResult = mockMvc.perform(post("/login")
@@ -141,12 +159,16 @@ class UserControllerIntegrationTest extends Specification {
         and:
             User validUserDao = userDao.findUserByUsernameAndPassword(user.getUsername(), user.getPassword()).join()
             validUserDao.getUsername() == user.getUsername()
+
+        cleanup:
+            userService.deleteUserByUsername(savedUser.getUsername()).join()
     }
 
     def "should throw InvalidLoginOrPasswordException when login or password is invalid"() {
 
         given:
-            def wrongPassUser = new User("test@gmail.com", "test", "wrongPass")
+            User user = new User("test@gmail.com", "test", "pass")
+            User wrongPassUser = new User("test@gmail.com", "test", "wrongPass")
 
         when:
             def mvcResult = mockMvc.perform(post("/login")
@@ -196,8 +218,15 @@ class UserControllerIntegrationTest extends Specification {
 
     def "should delete user successfully"() {
 
+        given:
+            User user = new User("test@gmail.com", "test", "pass")
+            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
+                .thenComposeAsync({ result -> userService.findByUsername(user.getUsername()) })
+
+            def savedUser = savedUserFuture.join()
+
         when:
-            def result = mockMvc.perform(delete("/delete/{username}/", user.getUsername()))
+            def result = mockMvc.perform(delete("/delete/{username}/", savedUser.getUsername()))
                 .andExpect(request().asyncStarted())
                 .andReturn()
 
