@@ -20,4 +20,6 @@ public interface LocationService {
     CompletableFuture<Location> findById(Long id);
 
     CompletableFuture<List<Location>> findAllMyLocations(Long userId);
+
+    CompletableFuture<Location> findLocationByName(String name);
 }

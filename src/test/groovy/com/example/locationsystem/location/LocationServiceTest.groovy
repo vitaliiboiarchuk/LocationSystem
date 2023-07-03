@@ -23,10 +23,10 @@ class LocationServiceTest extends Specification {
         locationDao = Mock(LocationDao)
         locationService = new LocationServiceImpl(locationDao)
 
-        user = new User(1L, "user1", "user1", "pass1")
-        loc = new Location(1L, "name1", "add1", user)
+        user = new User("user1", "user1", "pass1")
+        loc = new Location("name1", "add1", user)
 
-        user2 = new User(2L, "user2", "user2", "pass2")
+        user2 = new User("user2", "user2", "pass2")
 
 
         locs = new ArrayList()
@@ -126,11 +126,24 @@ class LocationServiceTest extends Specification {
             loc == location
     }
 
+    def "should find location by name"() {
+
+        given:
+            locationDao.findLocationByName(loc.getName()) >> CompletableFuture.completedFuture(loc)
+
+        when:
+            def result = locationService.findLocationByName(loc.getName())
+
+        then:
+            def location = result.get()
+            loc == location
+    }
+
     def "should find all my locations"() {
 
         given:
-            def adminAccessLoc = new Location(2L, "name2", "add2", user2)
-            def readAccessLoc = new Location(3L, "name3", "add3", user2)
+            def adminAccessLoc = new Location("name2", "add2", user2)
+            def readAccessLoc = new Location("name3", "add3", user2)
             def adminAccessLocs = [adminAccessLoc]
             def readAccessLocs = [readAccessLoc]
 

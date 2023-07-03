@@ -1,6 +1,7 @@
 package com.example.locationsystem.user;
 
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,8 +10,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-@Log4j2
 public class UserServiceImpl implements UserService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserDao userDao;
 
@@ -22,21 +24,21 @@ public class UserServiceImpl implements UserService {
     @Override
     public CompletableFuture<User> findByUsername(String username) {
 
-        log.info("Finding user by username");
+        LOGGER.info("Finding user by username");
         return userDao.findByUsername(username);
     }
 
     @Override
     public CompletableFuture<User> findUserByUsernameAndPassword(String username, String password) {
 
-        log.info("Finding user by username and password");
+        LOGGER.info("Finding user by username and password");
         return userDao.findUserByUsernameAndPassword(username, password);
     }
 
     @Override
     public CompletableFuture<Void> saveUser(User user) {
 
-        log.info("Saving user: {}", user);
+        LOGGER.info("Saving user: {}", user);
         return userDao.saveUser(user);
     }
 
@@ -49,7 +51,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, Long userId) {
 
-        log.info("Finding all users with access on location. Location ID: {}, User ID: {}",
+        LOGGER.info("Finding all users with access on location. Location ID: {}, User ID: {}",
             locationId, userId);
         CompletableFuture<List<User>> adminAccessFuture = userDao.findAllUsersWithAccessOnLocation(locationId,
             "ADMIN", userId);
@@ -66,7 +68,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public CompletableFuture<User> findLocationOwner(Long locationId, Long id) {
 
-        log.info("Finding location owner. Location ID: {}, User ID: {}", locationId, id);
+        LOGGER.info("Finding location owner. Location ID: {}, User ID: {}", locationId, id);
         CompletableFuture<User> owner = userDao.findLocationOwner(locationId);
         return owner.thenApplyAsync(result -> {
             if (result != null && !result.getId().equals(id)) {
@@ -74,6 +76,19 @@ public class UserServiceImpl implements UserService {
             }
             return result;
         });
+    }
+
+    @Override
+    public CompletableFuture<Void> deleteUserByUsername(String username) {
+
+        LOGGER.info("Deleting user by username: {}", username);
+        return userDao.deleteUserByUsername(username);
+    }
+
+    @Override
+    public Long getMaxIdFromUsers() {
+
+        return userDao.getMaxIdFromUsers();
     }
 }
 

@@ -16,4 +16,8 @@ public interface UserService {
     CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, Long userId);
 
     CompletableFuture<User> findLocationOwner(Long locationId, Long id);
+
+    CompletableFuture<Void> deleteUserByUsername(String username);
+
+    Long getMaxIdFromUsers();
 }

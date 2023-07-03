@@ -1,6 +1,7 @@
 package com.example.locationsystem.userAccess;
 
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,8 +10,9 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-@Log4j2
 public class UserAccessDao {
+
+    private final Logger log = LoggerFactory.getLogger(UserAccessDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -45,7 +47,6 @@ public class UserAccessDao {
     public CompletableFuture<Void> changeUserAccess(String newTitle, Long locationId, Long userId) {
 
         return CompletableFuture.runAsync(() -> {
-
             jdbcTemplate.update("UPDATE accesses SET title = ? WHERE location_id = ? AND user_id = ?",
                 newTitle, locationId, userId);
             log.info("User access changed - new title: {}, locationId: {}, userId: {}",
