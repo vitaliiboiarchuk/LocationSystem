@@ -2,52 +2,76 @@ package com.example.locationsystem.userAccess
 
 import com.example.locationsystem.location.Location
 import com.example.locationsystem.user.User
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
+import spock.lang.Subject
 
-@SpringBootTest
+import java.util.concurrent.CompletableFuture
+
 class UserAccessServiceTest extends Specification {
 
-    @Autowired
+    UserAccessDao userAccessDao
+
+    @Subject
     UserAccessService userAccessService
 
-    @Autowired
-    UserAccessRepository userAccessRepository
+    User user
+    User user2
+    Location loc
+    UserAccess userAccess
 
-    def locOwner = new User("test@gmail.com", "test", "1234", 1)
-    def user1 = new User("test1@gmail.com", "test", "1234", 1)
-    def location = new Location("test", "test", locOwner)
-    def userAccess = new UserAccess("ADMIN",user1,location)
+    def setup() {
 
-    void setup() {
-        userAccessRepository = Mock()
-        userAccessService = new UserAccessServiceImpl(userAccessRepository)
+        userAccessDao = Mock(UserAccessDao)
+        userAccessService = new UserAccessServiceImpl(userAccessDao)
+
+        user = new User("user1", "user1", "pass1")
+        user2 = new User("user2", "user2", "pass2")
+        loc = new Location("name1", "add1", user)
+        userAccess = new UserAccess("ADMIN", user2, loc)
     }
 
-    def "should save user access"() {
+    def "should insert user access into database"() {
+
         given:
-        userAccess.setId(1L)
+            def userAccess = new UserAccess("title1", user2, loc)
+            userAccessDao.saveUserAccess(userAccess) >> CompletableFuture.completedFuture(null)
 
         when:
-        userAccessService.saveUserAccess(userAccess)
+            def result = userAccessService.saveUserAccess(userAccess)
 
         then:
-        1 * userAccessRepository.save(userAccess)
+            def saveResult = result?.get()
+            saveResult == null
+
+            1 * userAccessDao.saveUserAccess(userAccess)
+    }
+
+    def "should find user access"() {
+
+        given:
+            userAccessDao.findUserAccess(loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(userAccess)
+
+        when:
+            def result = userAccessService.findUserAccess(loc.getId(), user2.getId())
+
+        then:
+            UserAccess access = result.get()
+            access.getTitle() == 'ADMIN'
     }
 
     def "should change user access"() {
+
         given:
-        location.setId(1L)
-        user1.setId(1L)
-        userAccessRepository.findUserAccessByLocationIdAndUserId(location.id, user1.id) >> userAccess
+            userAccessDao.findUserAccess(loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(userAccess)
+            userAccessDao.changeUserAccess(userAccess.getTitle(), loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(null)
 
         when:
-        userAccessService.changeUserAccess(location.id, user1.id)
+            def result = userAccessService.changeUserAccess(loc.getId(), user2.getId())
 
         then:
-        userAccess.title == "READ"
-        1 * userAccessRepository.save(userAccess)
+            def saveResult = result?.get()
+            saveResult == null
+
+            1 * userAccessDao.changeUserAccess("READ", loc.getId(), user2.getId())
     }
 }
-

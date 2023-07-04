@@ -1,8 +1,12 @@
 package com.example.locationsystem.userAccess;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface UserAccessService {
 
-    void saveUserAccess(UserAccess userAccess);
+    CompletableFuture<Void> saveUserAccess(UserAccess userAccess);
 
-    void changeUserAccess(Long locationId, Long userId);
+    CompletableFuture<Void> changeUserAccess(Long locationId, Long userId);
+
+    CompletableFuture<UserAccess> findUserAccess(Long locationId, Long userId);
 }

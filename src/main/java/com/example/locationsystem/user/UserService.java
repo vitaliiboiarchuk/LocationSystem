@@ -1,19 +1,23 @@
 package com.example.locationsystem.user;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface UserService {
 
-    User findByUserName(String name);
+    CompletableFuture<User> findByUsername(String name);
 
-    void saveUser(User user);
+    CompletableFuture<User> findUserByUsernameAndPassword(String username, String password);
 
-    User findById(Long id);
+    CompletableFuture<Void> saveUser(User user);
 
-    List<User> findUsersToShare(Long id);
+    CompletableFuture<User> findById(Long id);
 
-    List<User> findAllUsersWithAccessOnLocation(Long locationId, String title, Long id);
+    CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, Long userId);
 
-    User findLocationOwner(Long locationId, Long id);
+    CompletableFuture<User> findLocationOwner(Long locationId, Long id);
 
+    CompletableFuture<Void> deleteUserByUsername(String username);
+
+    Long getMaxIdFromUsers();
 }
