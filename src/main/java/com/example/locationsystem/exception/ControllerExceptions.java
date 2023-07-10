@@ -18,14 +18,6 @@ public class ControllerExceptions {
         }
     }
 
-    public static class NotLoggedInException extends RuntimeException {
-
-        public NotLoggedInException(String message) {
-
-            super(message);
-        }
-    }
-
     public static class LocationOwnerNotFoundException extends RuntimeException {
 
         public LocationOwnerNotFoundException(String message) {
@@ -34,9 +26,9 @@ public class ControllerExceptions {
         }
     }
 
-    public static class NoLocationFoundException extends RuntimeException {
+    public static class LocationNotFoundException extends RuntimeException {
 
-        public NoLocationFoundException(String message) {
+        public LocationNotFoundException(String message) {
 
             super(message);
         }

@@ -1,18 +1,14 @@
 package com.example.locationsystem.user;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
+@Log4j2
 public class UserServiceImpl implements UserService {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserDao userDao;
 
@@ -22,73 +18,54 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CompletableFuture<User> findByUsername(String username) {
+    public CompletableFuture<User> findUserByEmail(String email) {
 
-        LOGGER.info("Finding user by username");
-        return userDao.findByUsername(username);
+        log.info("Finding user by email");
+        return userDao.findUserByEmail(email);
     }
 
     @Override
-    public CompletableFuture<User> findUserByUsernameAndPassword(String username, String password) {
+    public CompletableFuture<User> findUserByEmailAndPassword(String email, String password) {
 
-        LOGGER.info("Finding user by username and password");
-        return userDao.findUserByUsernameAndPassword(username, password);
+        log.info("Finding user by email and password");
+        return userDao.findUserByEmailAndPassword(email, password);
     }
 
     @Override
-    public CompletableFuture<Void> saveUser(User user) {
+    public CompletableFuture<User> saveUser(User user) {
 
-        LOGGER.info("Saving user: {}", user);
+        log.info("Saving user: {}", user);
         return userDao.saveUser(user);
     }
 
     @Override
-    public CompletableFuture<User> findById(Long id) {
+    public CompletableFuture<User> findUserById(Long id) {
 
-        return userDao.findById(id);
+        return userDao.findUserById(id);
     }
 
     @Override
-    public CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, Long userId) {
+    public CompletableFuture<List<User>> findAllUsersOnLocation(Long locationId, Long userId) {
 
-        LOGGER.info("Finding all users with access on location. Location ID: {}, User ID: {}",
+        log.info("Finding all users with access on location. Location ID: {}, User ID: {}",
             locationId, userId);
-        CompletableFuture<List<User>> adminAccessFuture = userDao.findAllUsersWithAccessOnLocation(locationId,
-            "ADMIN", userId);
-        CompletableFuture<List<User>> readAccessFuture = userDao.findAllUsersWithAccessOnLocation(locationId,
-            "READ", userId);
-
-        return CompletableFuture.allOf(adminAccessFuture, readAccessFuture)
-            .thenApplyAsync((Void) -> Stream.of(
-                adminAccessFuture.join(),
-                readAccessFuture.join()
-            ).flatMap(List::stream).collect(Collectors.toList()));
+        return userDao.findAllUsersOnLocation(locationId, userId);
     }
 
     @Override
     public CompletableFuture<User> findLocationOwner(Long locationId, Long id) {
 
-        LOGGER.info("Finding location owner. Location ID: {}, User ID: {}", locationId, id);
-        CompletableFuture<User> owner = userDao.findLocationOwner(locationId);
-        return owner.thenApplyAsync(result -> {
-            if (result != null && !result.getId().equals(id)) {
-                return null;
-            }
-            return result;
-        });
+        log.info("Finding location owner. Location ID: {}, User ID: {}", locationId, id);
+        return userDao.findLocationOwner(locationId);
+
     }
 
     @Override
-    public CompletableFuture<Void> deleteUserByUsername(String username) {
+    public CompletableFuture<Void> deleteUserByEmail(String email) {
 
-        LOGGER.info("Deleting user by username: {}", username);
-        return userDao.deleteUserByUsername(username);
+        log.info("Deleting user by username: {}", email);
+        return userDao.deleteUserByEmail(email);
     }
 
-    @Override
-    public Long getMaxIdFromUsers() {
-
-        return userDao.getMaxIdFromUsers();
-    }
 }
 

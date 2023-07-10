@@ -1,8 +1,5 @@
 package com.example.locationsystem.userAccess
 
-import com.example.locationsystem.location.Location
-import com.example.locationsystem.user.User
-import org.springframework.jdbc.core.BeanPropertyRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import spock.lang.Specification
@@ -45,24 +42,22 @@ class UserAccessDaoTest extends Specification {
     def "should save user access"() {
 
         given:
-            User user = new User("test1", "test1", "test1")
-            User user2 = new User("test2", "test2", "test2")
+            def accessUserId = 6L
+            def locationId = 5L
             jdbcTemplate.execute("INSERT INTO users(id,username,password,name) VALUES(5,'user55','pass55','name55'),(6,'user56','pass56','name56')")
-            Location location = new Location("test1", "test1", user)
             jdbcTemplate.execute("INSERT INTO locations(id,name,address,user_id) VALUES(5,'loc56','add56',5)")
 
-            UserAccess userAccess = new UserAccess("Title11", user2, location)
+            UserAccess userAccess = new UserAccess("Title11", accessUserId, locationId)
 
         when:
-            CompletableFuture<Void> futureResult = userAccessDao.saveUserAccess(userAccess)
+            CompletableFuture<UserAccess> futureResult = userAccessDao.saveUserAccess(userAccess)
 
         then:
-            futureResult.get() == null
-
-        and:
-            def savedUserAccess = jdbcTemplate.queryForObject("SELECT * FROM accesses WHERE title = ?", BeanPropertyRowMapper.newInstance(UserAccess.class), userAccess.getTitle())
-            savedUserAccess != null
-            savedUserAccess.getTitle() == userAccess.getTitle()
+            UserAccess savedAccess = futureResult.get()
+            savedAccess != null
+            savedAccess.getTitle() == userAccess.getTitle()
+            savedAccess.getLocationId() == userAccess.getLocationId()
+            savedAccess.getUserId() == userAccess.getUserId()
 
         cleanup:
             jdbcTemplate.execute("DELETE FROM accesses WHERE title = 'Title11'")
@@ -73,19 +68,26 @@ class UserAccessDaoTest extends Specification {
 
     def "should find user access"() {
 
+        given:
+            def access = new UserAccess("ADMIN", 2, 1)
+
         when:
-        CompletableFuture<UserAccess> result = userAccessDao.findUserAccess(1L,2L)
+            CompletableFuture<UserAccess> result = userAccessDao.findUserAccess(access)
 
         then:
-        UserAccess userAccess = result.get()
-        userAccess.getId() == 1L
-        userAccess.getTitle() == 'ADMIN'
+            UserAccess userAccess = result.get()
+            userAccess.getUserId() == 2L
+            userAccess.getLocationId() == 1L
+            userAccess.getTitle() == 'ADMIN'
     }
 
     def "should change user access"() {
 
+        given:
+            def access = new UserAccess("ADMIN", 2, 1)
+
         when:
-            CompletableFuture<Void> result = userAccessDao.changeUserAccess("READ", 1L, 2L)
+            CompletableFuture<Void> result = userAccessDao.changeUserAccess(access)
 
         then:
             result.get() == null

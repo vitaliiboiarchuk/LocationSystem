@@ -4,9 +4,9 @@ import java.util.concurrent.CompletableFuture;
 
 public interface UserAccessService {
 
-    CompletableFuture<Void> saveUserAccess(UserAccess userAccess);
+    CompletableFuture<UserAccess> saveUserAccess(UserAccess userAccess);
 
-    CompletableFuture<Void> changeUserAccess(Long locationId, Long userId);
+    CompletableFuture<Void> changeUserAccess(UserAccess userAccess);
 
-    CompletableFuture<UserAccess> findUserAccess(Long locationId, Long userId);
+    CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess);
 }

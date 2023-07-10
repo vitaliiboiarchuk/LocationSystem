@@ -1,18 +1,20 @@
 package com.example.locationsystem.userAccess;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@Log4j2
 public class UserAccessDao {
-
-    private final Logger log = LoggerFactory.getLogger(UserAccessDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -21,36 +23,46 @@ public class UserAccessDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public CompletableFuture<Void> saveUserAccess(UserAccess userAccess) {
+    private static final String SAVE_USER_ACCESS = "INSERT INTO accesses(title,location_id,user_id) VALUES(?,?,?)";
+    private static final String FIND_USER_ACCESS = "SELECT * FROM accesses WHERE location_id = ? AND user_id = ?";
+    private static final String CHANGE_USER_ACCESS = "UPDATE accesses SET title = CASE WHEN title = 'ADMIN' THEN " +
+        "'READ' WHEN title = 'READ' THEN 'ADMIN' ELSE title END WHERE location_id = ? AND user_id = ?";
 
-        return CompletableFuture.runAsync(() -> {
-            jdbcTemplate.update("INSERT INTO accesses(title,location_id,user_id) VALUES(?,?,?)",
-                userAccess.getTitle(), userAccess.getLocation().getId(), userAccess.getUser().getId());
-            log.info("User access saved: {}", userAccess);
-        });
-    }
-
-    public CompletableFuture<UserAccess> findUserAccess(Long locationId, Long userId) {
+    public CompletableFuture<UserAccess> saveUserAccess(UserAccess userAccess) {
 
         return CompletableFuture.supplyAsync(() -> {
-            try {
-                return jdbcTemplate.queryForObject("SELECT * FROM accesses WHERE location_id = ? AND" +
-                        " user_id = ?",
-                    BeanPropertyRowMapper.newInstance(UserAccess.class), locationId, userId);
-            } catch (IncorrectResultSizeDataAccessException e) {
-                log.warn("User access not found for locationId: {} and userId: {}", locationId, userId);
-                return null;
-            }
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(SAVE_USER_ACCESS, Statement.RETURN_GENERATED_KEYS);
+                ps.setString(1, userAccess.getTitle());
+                ps.setLong(2, userAccess.getLocationId());
+                ps.setLong(3, userAccess.getUserId());
+                return ps;
+            }, keyHolder);
+            Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+            userAccess.setId(generatedId);
+            log.info("User access saved: {}", userAccess);
+            return userAccess;
         });
     }
 
-    public CompletableFuture<Void> changeUserAccess(String newTitle, Long locationId, Long userId) {
+    public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess) {
+
+        return CompletableFuture.supplyAsync(() ->
+            jdbcTemplate.query(FIND_USER_ACCESS,
+                    BeanPropertyRowMapper.newInstance(UserAccess.class), userAccess.getLocationId(),
+                    userAccess.getUserId())
+                .stream()
+                .findFirst()
+                .orElse(null));
+    }
+
+    public CompletableFuture<Void> changeUserAccess(UserAccess userAccess) {
 
         return CompletableFuture.runAsync(() -> {
-            jdbcTemplate.update("UPDATE accesses SET title = ? WHERE location_id = ? AND user_id = ?",
-                newTitle, locationId, userId);
-            log.info("User access changed - new title: {}, locationId: {}, userId: {}",
-                newTitle, locationId, userId);
+            jdbcTemplate.update(CHANGE_USER_ACCESS, userAccess.getLocationId(), userAccess.getUserId());
+            log.info("User access changedLocation ID: {}, User ID: {}",
+                userAccess.getLocationId(), userAccess.getUserId());
         });
     }
 }

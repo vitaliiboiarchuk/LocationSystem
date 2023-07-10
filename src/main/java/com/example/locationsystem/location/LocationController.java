@@ -4,19 +4,13 @@ import com.example.locationsystem.user.User;
 import com.example.locationsystem.user.UserService;
 import com.example.locationsystem.userAccess.UserAccess;
 import com.example.locationsystem.userAccess.UserAccessService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.WebUtils;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -24,9 +18,8 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 
 @RestController
 @RequestMapping("/location")
+@Log4j2
 public class LocationController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocationController.class);
 
     private final UserService userService;
     private final LocationService locationService;
@@ -43,202 +36,172 @@ public class LocationController {
         this.userAccessService = userAccessService;
     }
 
-    Long getUserIdFromRequest(HttpServletRequest request) {
-
-        Cookie cookie = WebUtils.getCookie(request, "user");
-        if (cookie == null) {
-            LOGGER.warn("User not logged in");
-            throw new NotLoggedInException("Not logged in");
-        }
-        LOGGER.info("User logged in");
-        return Long.valueOf(cookie.getValue());
-    }
-
     @GetMapping("")
-    public CompletableFuture<ResponseEntity<List<Location>>> showLocations(HttpServletRequest request) {
+    public CompletableFuture<ResponseEntity<List<Location>>> showLocations(
+        @CookieValue("user") String userCookie
+    ) {
 
-        LOGGER.info("Show locations request received");
-        Long userId = getUserIdFromRequest(request);
+        log.info("Show locations request received");
+        Long userId = Long.valueOf(userCookie);
 
-        return locationService.findAllMyLocations(userId)
-            .thenApplyAsync(locations -> {
-                LOGGER.info("Show locations successful");
+        return locationService.findAllUserLocations(userId)
+            .thenApply(locations -> {
+                log.info("Show locations successful");
                 return ResponseEntity.ok(locations);
-            });
-    }
-
-    @GetMapping("/{locationId}/")
-    public CompletableFuture<ResponseEntity<List<User>>> showFriendsOnLocation(
-        HttpServletRequest request, @PathVariable Long locationId
-    ) {
-
-        LOGGER.info("Show friends on location request received. Location ID: {}", locationId);
-        Long userId = getUserIdFromRequest(request);
-
-        return locationService.findAllMyLocations(userId)
-            .thenComposeAsync(locations -> {
-                boolean containsLocWithId = locations.stream().anyMatch(loc -> loc.getId().equals(locationId));
-                if (!containsLocWithId) {
-                    LOGGER.warn("No location found with id: {}", locationId);
-                    throw new NoLocationFoundException("No location found");
-                }
-                LOGGER.info("Location found with id: {}", locationId);
-                return userService.findAllUsersWithAccessOnLocation(locationId, userId);
-            })
-            .thenApplyAsync(users -> {
-                LOGGER.info("Show friends on location successful. Location ID: {}", locationId);
-                return ResponseEntity.ok(users);
-            });
-    }
-
-    @PutMapping("/change/{locationId}/{uId}/")
-    public CompletableFuture<ResponseEntity<Void>> changeAccess(
-        HttpServletRequest request,
-        @PathVariable Long locationId,
-        @PathVariable Long uId
-    ) {
-
-        LOGGER.info("Change access request received. Location ID: {}, User ID: {}", locationId, uId);
-        Long userId = getUserIdFromRequest(request);
-
-        CompletableFuture<User> locationOwnerFuture = userService.findLocationOwner(locationId, userId);
-        CompletableFuture<UserAccess> userAccessFuture = userAccessService.findUserAccess(locationId, uId);
-
-        return locationOwnerFuture.thenCombine(userAccessFuture, (owner, userAccess) -> {
-                if (owner == null) {
-                    LOGGER.warn("Change access failed. Location owner not found. Location ID: {}", locationId);
-                    throw new LocationOwnerNotFoundException("Location owner not found");
-                }
-                if (userAccess == null) {
-                    LOGGER.warn("Change access failed. User access not found. Location ID: {}, User ID: {}",
-                        locationId, uId);
-                    throw new UserAccessNotFoundException("User access not found");
-                }
-                return null;
-            })
-            .thenComposeAsync(voidResult -> CompletableFuture.runAsync(() -> {
-                userAccessService.changeUserAccess(locationId, uId);
-            }))
-            .thenApplyAsync(voidResult2 -> {
-                LOGGER.info("Change access successful. Location ID: {}, User ID: {}", locationId, uId);
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.add("message", "Access changed successfully");
-                return ResponseEntity.ok().headers(headers).build();
             });
     }
 
     @PostMapping("/add")
     public CompletableFuture<ResponseEntity<Location>> addLocation(
-        HttpServletRequest request,
+        @CookieValue("user") String userCookie,
         @Valid @RequestBody Location location
     ) {
 
-        LOGGER.info("Add location request received");
-        Long userId = getUserIdFromRequest(request);
+        log.info("Add location request received");
+        Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<Location> locExistsFuture =
             locationService.findLocationByNameAndUserId(location.getName(),
                 userId);
 
-        return locExistsFuture.thenComposeAsync(locExists -> {
+        return locExistsFuture.thenCompose(locExists -> {
             if (locExists != null) {
-                LOGGER.warn("Add location failed. Location with the same name already exists. Location Name: {}",
+                log.warn("Add location failed. Location with the same name already exists. Location Name: {}",
                     location.getName());
                 throw new AlreadyExistsException("Location with that name already exists");
             }
-            return userService.findById(userId)
-                .thenApplyAsync(user -> {
-                    location.setUser(user);
-                    locationService.saveLocation(location);
-                    LOGGER.info("Add location successful");
-                    return ResponseEntity.ok(location);
-                });
+            return locationService.saveLocation(location, userId).thenApply(savedLocation -> {
+                log.info("Add location successful");
+                return ResponseEntity.ok(savedLocation);
+            });
         });
     }
 
-    @PostMapping("/share/{locationId}/{uId}/")
+    @GetMapping("/{locationId}/")
+    public CompletableFuture<ResponseEntity<List<User>>> showFriendsOnLocation(
+        @CookieValue("user") String userCookie, @PathVariable Long locationId
+    ) {
+
+        log.info("Show friends on location request received. Location id: {}", locationId);
+        Long userId = Long.valueOf(userCookie);
+
+            return locationService.findAllUserLocations(userId)
+                .thenCompose(locations -> {
+                    boolean containsLocWithId = locations.stream().anyMatch(loc -> loc.getId().equals(locationId));
+                    if (!containsLocWithId) {
+                        log.warn("No location found with id: {}", locationId);
+                        throw new LocationNotFoundException("No location found");
+                    }
+                    log.info("Location found with id: {}", locationId);
+                    return userService.findAllUsersOnLocation(locationId, userId);
+                })
+                .thenApply(users -> {
+                    log.info("Show friends on location successful. Location ID: {}", locationId);
+                    return ResponseEntity.ok(users);
+                });
+    }
+
+    @PostMapping("/share")
     public CompletableFuture<ResponseEntity<UserAccess>> shareLocation(
-        HttpServletRequest request,
-        @PathVariable Long locationId,
-        @PathVariable Long uId,
+        @CookieValue("user") String userCookie,
         @RequestBody UserAccess userAccess
     ) {
 
-        LOGGER.info("Share location request received. Location ID: {}, User ID: {}", locationId, uId);
-        Long userId = getUserIdFromRequest(request);
+        log.info("Share location request received. Location ID: {}, User ID: {}", userAccess.getLocationId(),
+            userAccess.getUserId());
+        Long userId = Long.valueOf(userCookie);
 
-        CompletableFuture<List<Location>> locationsFuture = locationService.findNotSharedToUserLocations(userId, uId);
-        CompletableFuture<User> userToShareFuture = userService.findById(uId);
+        CompletableFuture<List<Location>> locationsFuture = locationService.findNotSharedToUserLocations(userId,
+            userAccess.getUserId());
+        CompletableFuture<User> userToShareFuture = userService.findUserById(userAccess.getUserId());
 
         return locationsFuture.thenCombine(userToShareFuture, (locations, userToShare) -> {
-            boolean containsLocWithId = locations.stream().anyMatch(loc -> loc.getId().equals(locationId));
+            boolean containsLocWithId =
+                locations.stream().anyMatch(loc -> loc.getId().equals(userAccess.getLocationId()));
             if (!containsLocWithId) {
-                LOGGER.warn("Share location failed. No location to share with id: {}", locationId);
-                throw new NoLocationFoundException("No location to share");
+                log.warn("Share location failed. No location to share with id: {}", userAccess.getLocationId());
+                throw new LocationNotFoundException("No location to share");
             }
 
             if (userToShare == null) {
-                LOGGER.warn("Share location failed. No user to share with id: {}", uId);
+                log.warn("Share location failed. No user to share with id: {}", userAccess.getUserId());
                 throw new NoUserToShareException("No user to share");
             }
 
-            if (Objects.equals(uId, userId)) {
-                LOGGER.warn("Share location failed. Can't share location to yourself. User id: {}", userId);
+            if (userAccess.getUserId().equals(userId)) {
+                log.warn("Share location failed. Can't share location to yourself. User id: {}", userId);
                 throw new SelfShareException("Can't share to yourself");
             }
 
-            userAccess.setUser(userToShare);
-
-            CompletableFuture<Location> locationFuture = locationService.findById(locationId);
-            CompletableFuture<User> ownerFuture = userService.findById(userId);
-
-            CompletableFuture<Location> locWithOwnerFuture = CompletableFuture.allOf(locationFuture, ownerFuture)
-                .thenApplyAsync(result -> {
-                    Location location = locationFuture.join();
-                    User user = ownerFuture.join();
-                    location.setUser(user);
-                    return location;
-                });
-
-            Location locationWithOwner = locWithOwnerFuture.join();
-            userAccess.setLocation(locationWithOwner);
-
-            CompletableFuture<Void> saveUserAccessFuture =
-                CompletableFuture.runAsync(() -> {
-                    userAccessService.saveUserAccess(userAccess);
-                });
-
-            return saveUserAccessFuture.thenApplyAsync(result -> {
-                LOGGER.info("Share location successful. Location ID: {}, User ID: {}", locationId, uId);
-                return ResponseEntity.ok(userAccess);
+            return userAccessService.saveUserAccess(userAccess).thenApply(result -> {
+                log.info("Share location successful. Location ID: {}, User ID: {}", userAccess.getLocationId(),
+                    userAccess.getUserId());
+                return ResponseEntity.ok(result);
             });
-        }).thenComposeAsync(Function.identity());
+        }).thenCompose(Function.identity());
     }
 
-    @DeleteMapping("/delete/{locationId}/")
-    public CompletableFuture<ResponseEntity<Void>> deleteLocation(
-        HttpServletRequest request,
-        @PathVariable Long locationId
+    @PutMapping("/change")
+    public CompletableFuture<ResponseEntity<UserAccess>> changeAccess(
+        @CookieValue("user") String userCookie, @RequestBody UserAccess userAccess
     ) {
 
-        LOGGER.info("Delete location request received. Location ID: {}", locationId);
-        Long userId = getUserIdFromRequest(request);
+        log.info("Change access request received. Location ID: {}, User ID: {}", userAccess.getLocationId(),
+            userAccess.getUserId());
+        Long userId = Long.valueOf(userCookie);
 
-        CompletableFuture<User> userFuture = userService.findLocationOwner(locationId, userId);
+        CompletableFuture<User> locationOwnerFuture = userService.findLocationOwner(userAccess.getLocationId(),
+            userId);
+        CompletableFuture<UserAccess> userAccessFuture = userAccessService.findUserAccess(userAccess);
 
-        return userFuture.thenApplyAsync(owner -> {
-            if (owner == null) {
-                LOGGER.warn("Delete location failed. Not location owner. Location ID: {}", locationId);
+        return locationOwnerFuture.thenCombine(userAccessFuture, (owner, access) -> {
+            if (owner == null || !owner.getId().equals(userId)) {
+                log.warn("Change access failed. Location owner not found. Location ID: {}",
+                    userAccess.getLocationId());
                 throw new LocationOwnerNotFoundException("Location owner not found");
             }
-            locationService.deleteLocation(locationId, userId);
-            LOGGER.info("Delete location successful. Location ID: {}", locationId);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.add("message", "Location deleted successfully");
-            return ResponseEntity.ok().headers(headers).build();
+            if (access == null) {
+                log.warn("Change access failed. User access not found. Location ID: {}, User ID: {}",
+                    userAccess.getLocationId(), userAccess.getUserId());
+                throw new UserAccessNotFoundException("User access not found");
+            }
+            return userAccessService.changeUserAccess(userAccess)
+                .thenCompose(result ->
+                    userAccessService.findUserAccess(userAccess)
+                        .thenApply(updatedUserAccess -> {
+                            log.info("Change access successful. Location ID: {}, User ID: {}",
+                                userAccess.getLocationId(), userAccess.getUserId());
+                            return ResponseEntity.ok(updatedUserAccess);
+                        })
+                );
+        }).thenCompose(Function.identity());
+    }
+
+    @DeleteMapping("/delete/{name}/")
+    public CompletableFuture<ResponseEntity<Void>> deleteLocation(
+        @CookieValue("user") String userCookie, @PathVariable String name
+    ) {
+
+        log.info("Delete location request received. Location name: {}", name);
+        Long userId = Long.valueOf(userCookie);
+
+        CompletableFuture<Location> locationFuture = locationService.findLocationByNameAndUserId(name, userId);
+
+        return locationFuture.thenCompose(location -> {
+            if (location == null) {
+                log.warn("Location not found. Location name: {}", name);
+                throw new LocationNotFoundException("No location found");
+            }
+            Long locationId = location.getId();
+            return locationService.deleteLocation(locationId, userId)
+                .thenApply(deleted -> {
+                    log.info("Delete location successful. Location ID: {}", locationId);
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.add("message", "Location deleted successfully");
+                    return ResponseEntity.ok().headers(headers).build();
+                });
         });
     }
 }
+
 

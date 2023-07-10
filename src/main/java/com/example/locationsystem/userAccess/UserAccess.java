@@ -1,7 +1,5 @@
 package com.example.locationsystem.userAccess;
 
-import com.example.locationsystem.location.Location;
-import com.example.locationsystem.user.User;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +14,10 @@ public class UserAccess {
     private String title;
 
     @NonNull
-    User user;
+    private Long userId;
 
     @NonNull
-    Location location;
+    private Long locationId;
 
     public UserAccess() {
 

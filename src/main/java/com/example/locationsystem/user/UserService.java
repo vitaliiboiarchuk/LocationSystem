@@ -5,19 +5,18 @@ import java.util.concurrent.CompletableFuture;
 
 public interface UserService {
 
-    CompletableFuture<User> findByUsername(String name);
+    CompletableFuture<User> findUserByEmail(String email);
 
-    CompletableFuture<User> findUserByUsernameAndPassword(String username, String password);
+    CompletableFuture<User> findUserByEmailAndPassword(String email, String password);
 
-    CompletableFuture<Void> saveUser(User user);
+    CompletableFuture<User> saveUser(User user);
 
-    CompletableFuture<User> findById(Long id);
+    CompletableFuture<User> findUserById(Long id);
 
-    CompletableFuture<List<User>> findAllUsersWithAccessOnLocation(Long locationId, Long userId);
+    CompletableFuture<List<User>> findAllUsersOnLocation(Long locationId, Long userId);
 
     CompletableFuture<User> findLocationOwner(Long locationId, Long id);
 
-    CompletableFuture<Void> deleteUserByUsername(String username);
+    CompletableFuture<Void> deleteUserByEmail(String email);
 
-    Long getMaxIdFromUsers();
 }

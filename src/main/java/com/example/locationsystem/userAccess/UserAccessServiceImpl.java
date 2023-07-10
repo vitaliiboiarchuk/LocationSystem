@@ -1,15 +1,13 @@
 package com.example.locationsystem.userAccess;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@Log4j2
 public class UserAccessServiceImpl implements UserAccessService {
-
-    private final Logger LOGGER = LoggerFactory.getLogger(UserAccessServiceImpl.class);
 
     private final UserAccessDao userAccessDao;
 
@@ -19,27 +17,25 @@ public class UserAccessServiceImpl implements UserAccessService {
     }
 
     @Override
-    public CompletableFuture<Void> saveUserAccess(UserAccess userAccess) {
+    public CompletableFuture<UserAccess> saveUserAccess(UserAccess userAccess) {
 
-        LOGGER.info("Saving user access: {}", userAccess);
+        log.info("Saving user access. Location ID: {}, User ID: {}",
+            userAccess.getLocationId(), userAccess.getUserId());
         return userAccessDao.saveUserAccess(userAccess);
     }
 
     @Override
-    public CompletableFuture<UserAccess> findUserAccess(Long locationId, Long userId) {
+    public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess) {
 
-        return userAccessDao.findUserAccess(locationId, userId);
+        return userAccessDao.findUserAccess(userAccess);
     }
 
     @Override
-    public CompletableFuture<Void> changeUserAccess(Long locationId, Long userId) {
+    public CompletableFuture<Void> changeUserAccess(UserAccess userAccess) {
 
-        LOGGER.info("Changing user access for locationId: {} and userId: {}", locationId, userId);
-        CompletableFuture<UserAccess> userAccessFuture = findUserAccess(locationId, userId);
-        UserAccess userAccess = userAccessFuture.join();
-
-        String newTitle = userAccess.getTitle().equals("ADMIN") ? "READ" : "ADMIN";
-        return userAccessDao.changeUserAccess(newTitle, locationId, userId);
+        log.info("Changing user access. Location ID: {}, User ID: {}",
+            userAccess.getLocationId(), userAccess.getUserId());
+        return userAccessDao.changeUserAccess(userAccess);
     }
 }
 
