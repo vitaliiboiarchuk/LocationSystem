@@ -120,12 +120,10 @@ public class LocationController {
                 log.warn("Share location failed. No location to share with id: {}", userAccess.getLocationId());
                 throw new LocationNotFoundException("No location to share");
             }
-
             if (userToShare == null) {
                 log.warn("Share location failed. No user to share with id: {}", userAccess.getUserId());
                 throw new NoUserToShareException("No user to share");
             }
-
             if (userAccess.getUserId().equals(userId)) {
                 log.warn("Share location failed. Can't share location to yourself. User id: {}", userId);
                 throw new SelfShareException("Can't share to yourself");

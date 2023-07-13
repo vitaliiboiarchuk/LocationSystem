@@ -97,7 +97,7 @@ class UserServiceTest extends Specification {
             userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findLocationOwner(1L, user.getId())
+            def result = userService.findLocationOwner(1L)
 
         then:
             result.get() == user
