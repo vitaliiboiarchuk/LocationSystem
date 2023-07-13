@@ -148,8 +148,7 @@ public class LocationController {
             userAccess.getUserId());
         Long userId = Long.valueOf(userCookie);
 
-        CompletableFuture<User> locationOwnerFuture = userService.findLocationOwner(userAccess.getLocationId(),
-            userId);
+        CompletableFuture<User> locationOwnerFuture = userService.findLocationOwner(userAccess.getLocationId());
         CompletableFuture<UserAccess> userAccessFuture = userAccessService.findUserAccess(userAccess);
 
         return locationOwnerFuture.thenCombine(userAccessFuture, (owner, access) -> {
@@ -190,10 +189,9 @@ public class LocationController {
                 log.warn("Location not found. Location name: {}", name);
                 throw new LocationNotFoundException("No location found");
             }
-            Long locationId = location.getId();
-            return locationService.deleteLocation(locationId, userId)
+            return locationService.deleteLocation(location.getId(), userId)
                 .thenApply(deleted -> {
-                    log.info("Delete location successful. Location ID: {}", locationId);
+                    log.info("Delete location successful. Location ID: {}", location.getId());
                     HttpHeaders headers = new HttpHeaders();
                     headers.add("message", "Location deleted successfully");
                     return ResponseEntity.ok().headers(headers).build();

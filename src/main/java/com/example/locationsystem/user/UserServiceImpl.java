@@ -53,9 +53,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CompletableFuture<User> findLocationOwner(Long locationId, Long id) {
+    public CompletableFuture<User> findLocationOwner(Long locationId) {
 
-        log.info("Finding location owner. Location ID: {}, User ID: {}", locationId, id);
+        log.info("Finding location owner. Location ID: {}", locationId);
         return userDao.findLocationOwner(locationId);
 
     }
