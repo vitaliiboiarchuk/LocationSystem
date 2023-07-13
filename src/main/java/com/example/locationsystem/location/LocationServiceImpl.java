@@ -25,6 +25,13 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
+    public CompletableFuture<Location> findLocationInUserLocations(Long userId, Long locationId) {
+
+        log.info("Finding location in user locations by user id: {} and location id: {}",userId,locationId);
+        return locationDao.findLocationInUserLocations(userId,locationId);
+    }
+
+    @Override
     public CompletableFuture<Location> findLocationByNameAndUserId(String name, Long userId) {
 
         log.info("Finding location by name and user id. Name: {}, User id: {}", name, userId);
@@ -45,10 +52,10 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public CompletableFuture<List<Location>> findNotSharedToUserLocations(Long id, Long userId) {
+    public CompletableFuture<Location> findNotSharedToUserLocation(Long id, Long locId, Long userId) {
 
-        log.info("Finding not shared to user locations by User id: {} and User to share id: {}", id, userId);
-        return locationDao.findNotSharedToUserLocations(id, userId);
+        log.info("Finding not shared to user locations by User id: {} and location id: {}, and User to share id: {}", id, locId, userId);
+        return locationDao.findNotSharedToUserLocation(id, locId, userId);
     }
 
     @Override

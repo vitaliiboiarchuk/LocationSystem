@@ -32,7 +32,7 @@ class LocationServiceTest extends Specification {
             locationDao.saveLocation(loc) >> CompletableFuture.completedFuture(null)
 
         when:
-            def result = locationService.saveLocation(loc,1L)
+            def result = locationService.saveLocation(loc, 1L)
 
         then:
             def saveResult = result?.get()
@@ -66,6 +66,19 @@ class LocationServiceTest extends Specification {
             locsList == locs
     }
 
+    def "findLocationInUserLocations should return location"() {
+
+        given:
+            locationDao.findLocationInUserLocations(1, 1) >> CompletableFuture.completedFuture(loc)
+
+        when:
+            def result = locationService.findLocationInUserLocations(1, 1)
+
+        then:
+            def location = result.get()
+            location == loc
+    }
+
     def "should delete location"() {
 
         given:
@@ -83,14 +96,14 @@ class LocationServiceTest extends Specification {
     def "should find not shared locations to user"() {
 
         given:
-            locationDao.findNotSharedToUserLocations(1, 2) >> CompletableFuture.completedFuture(locs)
+            locationDao.findNotSharedToUserLocation(1, 2, 2) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findNotSharedToUserLocations(1, 2)
+            def result = locationService.findNotSharedToUserLocation(1, 2, 2)
 
         then:
-            def locsList = result.get()
-            locsList == locs
+            def location = result.get()
+            location == loc
     }
 
     def "should find location by id"() {
@@ -105,18 +118,4 @@ class LocationServiceTest extends Specification {
             def location = result.get()
             loc == location
     }
-
-//    def "should find location by name"() {
-//
-//        given:
-//            locationDao.findLocationByName(loc.getName()) >> CompletableFuture.completedFuture(loc)
-//
-//        when:
-//            def result = locationService.findLocationByName(loc.getName())
-//
-//        then:
-//            def location = result.get()
-//            loc == location
-//    }
-
 }

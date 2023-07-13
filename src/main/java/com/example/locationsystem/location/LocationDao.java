@@ -24,7 +24,8 @@ public class LocationDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private static final String FIND_ALL_USER_LOCATIONS = "SELECT locations.id, locations.name, locations.address, locations.user_id " +
+    private static final String FIND_ALL_USER_LOCATIONS = "SELECT locations.id, locations.name, locations.address, " +
+        "locations.user_id " +
         "FROM " +
         "locations JOIN accesses ON locations.id = accesses.location_id WHERE accesses.user_id = ? UNION SELECT " +
         "id, name, address, user_id FROM locations WHERE user_id = ?";
@@ -32,11 +33,15 @@ public class LocationDao {
         "user_id = ?";
     private static final String SAVE_LOCATION = "INSERT INTO locations(name,address,user_id) VALUES (?,?,?)";
     private static final String FIND_LOCATION_BY_ID = "SELECT * FROM locations WHERE id = ?";
-    private static final String FIND_NOT_SHARED_TO_USER_LOCATIONS = "SELECT l.* FROM locations l LEFT JOIN accesses a" +
-        " ON l.id = a.location_id WHERE (l.user_id = ? OR (a.user_id = ? AND a.title = 'ADMIN')) AND (l.id NOT IN " +
+    private static final String FIND_NOT_SHARED_TO_USER_LOCATION = "SELECT l.* FROM locations l LEFT JOIN accesses a" +
+        " ON l.id = a.location_id WHERE (l.user_id = ? AND l.id = ? OR (a.user_id = ? AND a.title = 'ADMIN' AND a.location_id = ?)) AND (l.id NOT IN " +
         "(SELECT l.id FROM locations l JOIN accesses a ON l.id = a.location_id WHERE a.user_id = ? AND a.title IN " +
         "('ADMIN', 'READ')))";
     private static final String DELETE_LOCATION = "DELETE FROM locations WHERE id = ? AND user_id = ?";
+    private static final String FIND_LOCATION_IN_USER_LOCATIONS = "SELECT locations.id, locations.name, locations" +
+        ".address, locations.user_id FROM locations JOIN accesses ON locations.id = accesses.location_id WHERE " +
+        "accesses.user_id = ? AND locations.id = ? UNION SELECT id, name, address, user_id FROM locations WHERE " +
+        "user_id = ? AND locations.id = ?";
 
     public CompletableFuture<List<Location>> findAllUserLocations(Long id) {
 
@@ -46,6 +51,18 @@ public class LocationDao {
             log.info("All user locations by user id found: {}", id);
             return locations;
         });
+    }
+
+    public CompletableFuture<Location> findLocationInUserLocations(Long userId, Long locationId) {
+
+        return CompletableFuture.supplyAsync(() ->
+            jdbcTemplate.query(FIND_LOCATION_IN_USER_LOCATIONS,
+                    BeanPropertyRowMapper.newInstance(Location.class), userId, locationId, userId, locationId)
+                .stream()
+                .peek(loc -> log.info("Location found in user locations by user userId: {} and location userId: {}",
+                    userId, locationId))
+                .findFirst()
+                .orElse(null));
     }
 
     public CompletableFuture<Location> findLocationByNameAndUserId(String name, Long userId) {
@@ -60,6 +77,7 @@ public class LocationDao {
     }
 
     public CompletableFuture<Location> saveLocation(Location location) {
+
         return CompletableFuture.supplyAsync(() -> {
 
             KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -89,14 +107,15 @@ public class LocationDao {
                 .orElse(null));
     }
 
-    public CompletableFuture<List<Location>> findNotSharedToUserLocations(Long id, Long userId) {
+    public CompletableFuture<Location> findNotSharedToUserLocation(Long id, Long locId, Long userId) {
 
-        return CompletableFuture.supplyAsync(() -> {
-            List<Location> locations = jdbcTemplate.query(FIND_NOT_SHARED_TO_USER_LOCATIONS,
-                BeanPropertyRowMapper.newInstance(Location.class), id, id, userId);
-            log.info("Found not shared to user locations with User id: {} and User to share id: {}", id, userId);
-            return locations;
-        });
+        return CompletableFuture.supplyAsync(() ->
+            jdbcTemplate.query(FIND_NOT_SHARED_TO_USER_LOCATION,
+                BeanPropertyRowMapper.newInstance(Location.class), id, locId, id, locId, userId)
+                .stream()
+                .peek(loc -> log.info("Found not shared to user locations with User id: {} and location id: {} and User to share id: {}", id, locId, userId))
+                .findFirst()
+                .orElse(null));
     }
 
     public CompletableFuture<Void> deleteLocation(Long id, Long userId) {
@@ -106,5 +125,4 @@ public class LocationDao {
             log.info("Location deleted by location id: {} and user id: {}", id, userId);
         });
     }
-
 }

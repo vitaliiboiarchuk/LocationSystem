@@ -85,20 +85,19 @@ public class LocationController {
         log.info("Show friends on location request received. Location id: {}", locationId);
         Long userId = Long.valueOf(userCookie);
 
-            return locationService.findAllUserLocations(userId)
-                .thenCompose(locations -> {
-                    boolean containsLocWithId = locations.stream().anyMatch(loc -> loc.getId().equals(locationId));
-                    if (!containsLocWithId) {
-                        log.warn("No location found with id: {}", locationId);
-                        throw new LocationNotFoundException("No location found");
-                    }
-                    log.info("Location found with id: {}", locationId);
-                    return userService.findAllUsersOnLocation(locationId, userId);
-                })
-                .thenApply(users -> {
-                    log.info("Show friends on location successful. Location ID: {}", locationId);
-                    return ResponseEntity.ok(users);
-                });
+        return locationService.findLocationInUserLocations(userId, locationId)
+            .thenCompose(location -> {
+                if (location == null) {
+                    log.warn("No location found with id: {}", locationId);
+                    throw new LocationNotFoundException("No location found");
+                }
+                log.info("Location found with id: {}", locationId);
+                return userService.findAllUsersOnLocation(locationId, userId);
+            })
+            .thenApply(users -> {
+                log.info("Show friends on location successful. Location ID: {}", locationId);
+                return ResponseEntity.ok(users);
+            });
     }
 
     @PostMapping("/share")
@@ -111,14 +110,13 @@ public class LocationController {
             userAccess.getUserId());
         Long userId = Long.valueOf(userCookie);
 
-        CompletableFuture<List<Location>> locationsFuture = locationService.findNotSharedToUserLocations(userId,
+        CompletableFuture<Location> locationFuture = locationService.findNotSharedToUserLocation(userId,
+            userAccess.getLocationId(),
             userAccess.getUserId());
         CompletableFuture<User> userToShareFuture = userService.findUserById(userAccess.getUserId());
 
-        return locationsFuture.thenCombine(userToShareFuture, (locations, userToShare) -> {
-            boolean containsLocWithId =
-                locations.stream().anyMatch(loc -> loc.getId().equals(userAccess.getLocationId()));
-            if (!containsLocWithId) {
+        return locationFuture.thenCombine(userToShareFuture, (location, userToShare) -> {
+            if (location == null) {
                 log.warn("Share location failed. No location to share with id: {}", userAccess.getLocationId());
                 throw new LocationNotFoundException("No location to share");
             }

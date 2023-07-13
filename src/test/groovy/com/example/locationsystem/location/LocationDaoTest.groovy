@@ -57,6 +57,17 @@ class LocationDaoTest extends Specification {
             locations[2].getName() == 'gym'
     }
 
+    def "should find location in user locations"() {
+
+        when:
+            CompletableFuture<Location> futureResult = locationDao.findLocationInUserLocations(1, 1)
+
+        then:
+            Location location = futureResult.get()
+            location.getName() == 'home'
+            location.getAddress() == 'test'
+    }
+
     def "should find location by name and userId"() {
 
         when:
@@ -108,12 +119,11 @@ class LocationDaoTest extends Specification {
     def "should find locations not shared to user"() {
 
         when:
-            CompletableFuture<List<Location>> futureResult = locationDao.findNotSharedToUserLocations(1L, 2L)
+            CompletableFuture<Location> futureResult = locationDao.findNotSharedToUserLocation(1L, 2L, 2L)
 
         then:
-            List<Location> locsToShare = futureResult.get()
-            locsToShare.size() == 1
-            locsToShare[0].getName() == 'gym'
+            Location locToShare = futureResult.get()
+            locToShare.getName() == 'gym'
     }
 
     def "should find location by id"() {
@@ -125,14 +135,4 @@ class LocationDaoTest extends Specification {
             Location loc = futureResult.get()
             loc.getName() == 'home'
     }
-
-//    def "should find location by name"() {
-//
-//        when:
-//            CompletableFuture<Location> futureResult = locationDao.findLocationByName("home@gmail.com")
-//
-//        then:
-//            Location loc = futureResult.get()
-//            loc.getAddress() == 'test'
-//    }
 }
