@@ -38,7 +38,7 @@ public class LocationController {
 
     @GetMapping("")
     public CompletableFuture<ResponseEntity<List<Location>>> showLocations(
-        @CookieValue("user") String userCookie
+        @CookieValue(value = "user", required = false) String userCookie
     ) {
 
         log.info("Show locations request received");
