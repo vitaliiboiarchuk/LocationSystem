@@ -35,7 +35,7 @@ public class ExceptionHandlerController {
     @ExceptionHandler({AlreadyExistsException.class,
         InvalidLoginOrPasswordException.class, LocationNotFoundException.class, LocationOwnerNotFoundException.class,
         UserAccessNotFoundException.class, NoUserToShareException.class,
-        SelfShareException.class})
+        SelfShareException.class, NotLoggedInException.class})
     public ResponseEntity<Void> handleControllerException(RuntimeException e) {
 
         HttpHeaders headers = new HttpHeaders();

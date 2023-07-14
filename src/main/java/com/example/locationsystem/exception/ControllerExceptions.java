@@ -57,4 +57,12 @@ public class ControllerExceptions {
             super(message);
         }
     }
+
+    public static class NotLoggedInException extends RuntimeException {
+
+        public NotLoggedInException(String message) {
+
+            super(message);
+        }
+    }
 }

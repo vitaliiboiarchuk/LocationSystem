@@ -42,6 +42,11 @@ public class LocationController {
     ) {
 
         log.info("Show locations request received");
+
+        if (userCookie == null) {
+            log.warn("User not logged in");
+            throw new NotLoggedInException("Not logged in");
+        }
         Long userId = Long.valueOf(userCookie);
 
         return locationService.findAllUserLocations(userId)
@@ -53,11 +58,16 @@ public class LocationController {
 
     @PostMapping("/add")
     public CompletableFuture<ResponseEntity<Location>> addLocation(
-        @CookieValue("user") String userCookie,
+        @CookieValue(value = "user", required = false) String userCookie,
         @Valid @RequestBody Location location
     ) {
 
         log.info("Add location request received");
+
+        if (userCookie == null) {
+            log.warn("User not logged in");
+            throw new NotLoggedInException("Not logged in");
+        }
         Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<Location> locExistsFuture =
@@ -79,10 +89,15 @@ public class LocationController {
 
     @GetMapping("/{locationId}/")
     public CompletableFuture<ResponseEntity<List<User>>> showFriendsOnLocation(
-        @CookieValue("user") String userCookie, @PathVariable Long locationId
+        @CookieValue(value = "user", required = false) String userCookie, @PathVariable Long locationId
     ) {
 
         log.info("Show friends on location request received. Location id: {}", locationId);
+
+        if (userCookie == null) {
+            log.warn("User not logged in");
+            throw new NotLoggedInException("Not logged in");
+        }
         Long userId = Long.valueOf(userCookie);
 
         return locationService.findLocationInUserLocations(userId, locationId)
@@ -102,12 +117,17 @@ public class LocationController {
 
     @PostMapping("/share")
     public CompletableFuture<ResponseEntity<UserAccess>> shareLocation(
-        @CookieValue("user") String userCookie,
+        @CookieValue(value = "user", required = false) String userCookie,
         @RequestBody UserAccess userAccess
     ) {
 
         log.info("Share location request received. Location ID: {}, User ID: {}", userAccess.getLocationId(),
             userAccess.getUserId());
+
+        if (userCookie == null) {
+            log.warn("User not logged in");
+            throw new NotLoggedInException("Not logged in");
+        }
         Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<Location> locationFuture = locationService.findNotSharedToUserLocation(userId,
@@ -139,11 +159,16 @@ public class LocationController {
 
     @PutMapping("/change")
     public CompletableFuture<ResponseEntity<UserAccess>> changeAccess(
-        @CookieValue("user") String userCookie, @RequestBody UserAccess userAccess
+        @CookieValue(value = "user", required = false) String userCookie, @RequestBody UserAccess userAccess
     ) {
 
         log.info("Change access request received. Location ID: {}, User ID: {}", userAccess.getLocationId(),
             userAccess.getUserId());
+
+        if (userCookie == null) {
+            log.warn("User not logged in");
+            throw new NotLoggedInException("Not logged in");
+        }
         Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<User> locationOwnerFuture = userService.findLocationOwner(userAccess.getLocationId());
@@ -174,10 +199,15 @@ public class LocationController {
 
     @DeleteMapping("/delete/{name}/")
     public CompletableFuture<ResponseEntity<Void>> deleteLocation(
-        @CookieValue("user") String userCookie, @PathVariable String name
+        @CookieValue(value = "user", required = false) String userCookie, @PathVariable String name
     ) {
 
         log.info("Delete location request received. Location name: {}", name);
+
+        if (userCookie == null) {
+            log.warn("User not logged in");
+            throw new NotLoggedInException("Not logged in");
+        }
         Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<Location> locationFuture = locationService.findLocationByNameAndUserId(name, userId);
