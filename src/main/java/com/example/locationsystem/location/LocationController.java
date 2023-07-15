@@ -1,5 +1,6 @@
 package com.example.locationsystem.location;
 
+import com.example.locationsystem.annotation.GetAndValidUserId;
 import com.example.locationsystem.user.User;
 import com.example.locationsystem.user.UserService;
 import com.example.locationsystem.userAccess.UserAccess;
@@ -36,18 +37,9 @@ public class LocationController {
         this.userAccessService = userAccessService;
     }
 
+    @GetAndValidUserId
     @GetMapping("")
-    public CompletableFuture<ResponseEntity<List<Location>>> showLocations(
-        @CookieValue(value = "user", required = false) String userCookie
-    ) {
-
-        log.info("Show locations request received");
-
-        if (userCookie == null) {
-            log.warn("User not logged in");
-            throw new NotLoggedInException("Not logged in");
-        }
-        Long userId = Long.valueOf(userCookie);
+    public CompletableFuture<ResponseEntity<List<Location>>> showLocations(Long userId) {
 
         return locationService.findAllUserLocations(userId)
             .thenApply(locations -> {
@@ -56,19 +48,12 @@ public class LocationController {
             });
     }
 
+    @GetAndValidUserId
     @PostMapping("/add")
     public CompletableFuture<ResponseEntity<Location>> addLocation(
-        @CookieValue(value = "user", required = false) String userCookie,
+        Long userId,
         @Valid @RequestBody Location location
     ) {
-
-        log.info("Add location request received");
-
-        if (userCookie == null) {
-            log.warn("User not logged in");
-            throw new NotLoggedInException("Not logged in");
-        }
-        Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<Location> locExistsFuture =
             locationService.findLocationByNameAndUserId(location.getName(),
@@ -87,18 +72,11 @@ public class LocationController {
         });
     }
 
+    @GetAndValidUserId
     @GetMapping("/{locationId}/")
     public CompletableFuture<ResponseEntity<List<User>>> showFriendsOnLocation(
-        @CookieValue(value = "user", required = false) String userCookie, @PathVariable Long locationId
+        Long userId, @PathVariable Long locationId
     ) {
-
-        log.info("Show friends on location request received. Location id: {}", locationId);
-
-        if (userCookie == null) {
-            log.warn("User not logged in");
-            throw new NotLoggedInException("Not logged in");
-        }
-        Long userId = Long.valueOf(userCookie);
 
         return locationService.findLocationInUserLocations(userId, locationId)
             .thenCompose(location -> {
@@ -115,20 +93,12 @@ public class LocationController {
             });
     }
 
+    @GetAndValidUserId
     @PostMapping("/share")
     public CompletableFuture<ResponseEntity<UserAccess>> shareLocation(
-        @CookieValue(value = "user", required = false) String userCookie,
+        Long userId,
         @RequestBody UserAccess userAccess
     ) {
-
-        log.info("Share location request received. Location ID: {}, User ID: {}", userAccess.getLocationId(),
-            userAccess.getUserId());
-
-        if (userCookie == null) {
-            log.warn("User not logged in");
-            throw new NotLoggedInException("Not logged in");
-        }
-        Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<Location> locationFuture = locationService.findNotSharedToUserLocation(userId,
             userAccess.getLocationId(),
@@ -157,19 +127,11 @@ public class LocationController {
         }).thenCompose(Function.identity());
     }
 
+    @GetAndValidUserId
     @PutMapping("/change")
     public CompletableFuture<ResponseEntity<UserAccess>> changeAccess(
-        @CookieValue(value = "user", required = false) String userCookie, @RequestBody UserAccess userAccess
+        Long userId, @RequestBody UserAccess userAccess
     ) {
-
-        log.info("Change access request received. Location ID: {}, User ID: {}", userAccess.getLocationId(),
-            userAccess.getUserId());
-
-        if (userCookie == null) {
-            log.warn("User not logged in");
-            throw new NotLoggedInException("Not logged in");
-        }
-        Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<User> locationOwnerFuture = userService.findLocationOwner(userAccess.getLocationId());
         CompletableFuture<UserAccess> userAccessFuture = userAccessService.findUserAccess(userAccess);
@@ -197,18 +159,11 @@ public class LocationController {
         }).thenCompose(Function.identity());
     }
 
+    @GetAndValidUserId
     @DeleteMapping("/delete/{name}/")
     public CompletableFuture<ResponseEntity<Void>> deleteLocation(
-        @CookieValue(value = "user", required = false) String userCookie, @PathVariable String name
+        Long userId, @PathVariable String name
     ) {
-
-        log.info("Delete location request received. Location name: {}", name);
-
-        if (userCookie == null) {
-            log.warn("User not logged in");
-            throw new NotLoggedInException("Not logged in");
-        }
-        Long userId = Long.valueOf(userCookie);
 
         CompletableFuture<Location> locationFuture = locationService.findLocationByNameAndUserId(name, userId);
 
