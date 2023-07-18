@@ -27,29 +27,29 @@ class UserDaoTest extends Specification {
         userDao = new UserDao(jdbcTemplate)
 
         jdbcTemplate.execute("INSERT INTO users(id,name,username,password) VALUES(1,'name1','user1',SHA2('pass1',256))")
-        jdbcTemplate.execute("INSERT INTO locations(id,address,name,user_id) VALUES(1,'Add1','Name1',1)")
+        jdbcTemplate.execute("INSERT INTO locations(id,address,name,user_id) VALUES(1,'Add1','name1',1)")
     }
 
     def cleanup() {
 
-        jdbcTemplate.execute("DELETE FROM locations WHERE id = 1")
-        jdbcTemplate.execute("DELETE FROM users WHERE id = 1")
+        jdbcTemplate.execute("DELETE FROM locations WHERE name = 'name1'")
+        jdbcTemplate.execute("DELETE FROM users WHERE name = 'name1'")
     }
 
-    def "should find user by username"() {
+    def "should find user by email"() {
 
         when:
-            CompletableFuture<User> futureResult = userDao.findByUsername("user1")
+            CompletableFuture<User> futureResult = userDao.findUserByEmail("user1")
 
         then:
             User user = futureResult.get()
             user.getUsername() == 'user1'
     }
 
-    def "should find user by username and password"() {
+    def "should find user by email and password"() {
 
         when:
-            CompletableFuture<User> futureResult = userDao.findUserByUsernameAndPassword("user1", "pass1")
+            CompletableFuture<User> futureResult = userDao.findUserByEmailAndPassword("user1", "pass1")
 
         then:
             User user = futureResult.get()
@@ -62,16 +62,12 @@ class UserDaoTest extends Specification {
             User user = new User("user4", "name4", "pass4")
 
         when:
-            CompletableFuture<Void> futureResult = userDao.saveUser(user)
+            CompletableFuture<User> futureResult = userDao.saveUser(user)
 
         then:
-            futureResult.get() == null
 
-        and:
-            def savedUser = jdbcTemplate.queryForObject("SELECT * FROM users WHERE username = ?", BeanPropertyRowMapper.newInstance(User.class), user.getUsername())
-            savedUser != null
-            savedUser.getName() == user.getName()
-            savedUser.getPassword() != user.getPassword()
+            User savedUser = futureResult.get()
+            savedUser.getUsername() == user.getUsername()
 
         cleanup:
             jdbcTemplate.execute("DELETE FROM users WHERE username = 'user4'")
@@ -80,7 +76,7 @@ class UserDaoTest extends Specification {
     def "should find user by id"() {
 
         when:
-            CompletableFuture<User> futureResult = userDao.findById(1L)
+            CompletableFuture<User> futureResult = userDao.findUserById(1L)
 
         then:
             User user = futureResult.get()
@@ -94,7 +90,7 @@ class UserDaoTest extends Specification {
             jdbcTemplate.execute("INSERT INTO accesses(id,title,location_id,user_id) VALUES(1,'ADMIN',1,3),(2,'ADMIN',1,2)")
 
         when:
-            CompletableFuture<List<User>> futureResult = userDao.findAllUsersWithAccessOnLocation(1, "ADMIN", 3)
+            CompletableFuture<List<User>> futureResult = userDao.findAllUsersOnLocation(1, 3)
 
         then:
             List<User> users = futureResult.get()
@@ -117,20 +113,19 @@ class UserDaoTest extends Specification {
             owner.getName() == 'name1'
     }
 
-    def "should delete user by username"() {
+    def "should delete user by email"() {
 
         given:
-            jdbcTemplate.execute("INSERT INTO users(id,name,username,password) VALUES(100,'name1','test@gmail.com',SHA2('pass1',256))")
+            jdbcTemplate.execute("INSERT INTO users(id,name,username,password) VALUES(2,'name1','test@gmail.com',SHA2('pass1',256))")
 
         when:
-            CompletableFuture<Void> futureResult = userDao.deleteUserByUsername("test@gmail.com")
+            CompletableFuture<Void> futureResult = userDao.deleteUserByEmail("test@gmail.com")
 
         then:
             futureResult.get() == null
 
         and:
-
-            def deletedUser = jdbcTemplate.query("SELECT * FROM users WHERE username = ?", BeanPropertyRowMapper.newInstance(User.class), 100L)
+            def deletedUser = jdbcTemplate.query("SELECT * FROM users WHERE username = ?", BeanPropertyRowMapper.newInstance(User.class), 2L)
             deletedUser.isEmpty()
     }
 }

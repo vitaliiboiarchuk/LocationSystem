@@ -1,6 +1,5 @@
 package com.example.locationsystem.location;
 
-import com.example.locationsystem.user.User;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ public class Location {
     private String address;
 
     @NonNull
-    private User user;
+    private Long userId;
 
     public Location() {
 

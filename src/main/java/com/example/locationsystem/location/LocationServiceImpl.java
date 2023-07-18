@@ -1,94 +1,65 @@
 package com.example.locationsystem.location;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
+@Log4j2
+@RequiredArgsConstructor
 public class LocationServiceImpl implements LocationService {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocationServiceImpl.class);
 
     private final LocationDao locationDao;
 
-    public LocationServiceImpl(LocationDao locationDao) {
+    @Override
+    public CompletableFuture<List<Location>> findAllUserLocations(Long userId) {
 
-        this.locationDao = locationDao;
+        log.info("Finding all user locations by user id={}", userId);
+        return locationDao.findAllUserLocations(userId);
     }
 
     @Override
-    public CompletableFuture<Void> saveLocation(Location location) {
+    public CompletableFuture<Location> findLocationInUserLocations(Long userId, Long locationId) {
 
-        LOGGER.info("Saving location: {}", location);
-        return locationDao.saveLocation(location);
+        log.info("Finding location in user locations by user id={} and location id={}",userId,locationId);
+        return locationDao.findLocationInUserLocations(userId,locationId);
     }
 
     @Override
     public CompletableFuture<Location> findLocationByNameAndUserId(String name, Long userId) {
 
-        LOGGER.info("Finding location by name and user id. Name: {}, User id: {}", name, userId);
+        log.info("Finding location by name and user id. Name={}, User id={}", name, userId);
         return locationDao.findLocationByNameAndUserId(name, userId);
     }
 
     @Override
-    public CompletableFuture<List<Location>> findAllAddedLocations(Long id) {
+    public CompletableFuture<Location> saveLocation(Location location, Long ownerId) {
 
-        return locationDao.findAllAddedLocations(id);
+        location.setUserId(ownerId);
+        return locationDao.saveLocation(location);
+    }
+
+        @Override
+    public CompletableFuture<Location> findLocationById(Long id) {
+
+        return locationDao.findLocationById(id);
     }
 
     @Override
-    public CompletableFuture<List<Location>> findAllLocationsWithAccess(Long id, String title) {
+    public CompletableFuture<Location> findNotSharedToUserLocation(Long id, Long locId, Long userId) {
 
-        return locationDao.findAllLocationsWithAccess(id, title);
-    }
-
-    @Override
-    public CompletableFuture<List<Location>> findNotSharedToUserLocations(Long id, Long userId) {
-
-        LOGGER.info("Finding not shared to user locations by User id: {} and User to share id: {}", id, userId);
-        return locationDao.findNotSharedToUserLocations(id, userId);
+        log.info("Finding not shared to user locations by User id={} and location id={}, and User to share id={}", id, locId, userId);
+        return locationDao.findNotSharedToUserLocation(id, locId, userId);
     }
 
     @Override
     public CompletableFuture<Void> deleteLocation(Long id, Long userId) {
 
-        LOGGER.info("Deleting location by location id: {} and user id: {}", id, userId);
+        log.info("Deleting location by location id={} and user id={}", id, userId);
         return locationDao.deleteLocation(id, userId);
     }
 
-    @Override
-    public CompletableFuture<Location> findById(Long id) {
-
-        return locationDao.findById(id);
-    }
-
-    @Override
-    public CompletableFuture<List<Location>> findAllMyLocations(Long userId) {
-
-        LOGGER.info("Finding all my locations by user id: {}", userId);
-        CompletableFuture<List<Location>> addedLocationsFuture =
-            findAllAddedLocations(userId);
-        CompletableFuture<List<Location>> adminAccessFuture =
-            findAllLocationsWithAccess(userId, "ADMIN");
-        CompletableFuture<List<Location>> readAccessFuture =
-            findAllLocationsWithAccess(userId, "READ");
-
-        return CompletableFuture.allOf(addedLocationsFuture, adminAccessFuture, readAccessFuture)
-            .thenApplyAsync((Void) -> Stream.of(
-                addedLocationsFuture.join(),
-                adminAccessFuture.join(),
-                readAccessFuture.join()
-            ).flatMap(List::stream).collect(Collectors.toList()));
-    }
-
-    @Override
-    public CompletableFuture<Location> findLocationByName(String name) {
-
-        return locationDao.findLocationByName(name);
-    }
 }

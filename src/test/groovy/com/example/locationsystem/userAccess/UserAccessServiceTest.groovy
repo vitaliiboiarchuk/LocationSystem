@@ -1,7 +1,5 @@
 package com.example.locationsystem.userAccess
 
-import com.example.locationsystem.location.Location
-import com.example.locationsystem.user.User
 import spock.lang.Specification
 import spock.lang.Subject
 
@@ -14,9 +12,6 @@ class UserAccessServiceTest extends Specification {
     @Subject
     UserAccessService userAccessService
 
-    User user
-    User user2
-    Location loc
     UserAccess userAccess
 
     def setup() {
@@ -24,16 +19,12 @@ class UserAccessServiceTest extends Specification {
         userAccessDao = Mock(UserAccessDao)
         userAccessService = new UserAccessServiceImpl(userAccessDao)
 
-        user = new User("user1", "user1", "pass1")
-        user2 = new User("user2", "user2", "pass2")
-        loc = new Location("name1", "add1", user)
-        userAccess = new UserAccess("ADMIN", user2, loc)
+        userAccess = new UserAccess("ADMIN", 1, 2)
     }
 
     def "should insert user access into database"() {
 
         given:
-            def userAccess = new UserAccess("title1", user2, loc)
             userAccessDao.saveUserAccess(userAccess) >> CompletableFuture.completedFuture(null)
 
         when:
@@ -49,10 +40,10 @@ class UserAccessServiceTest extends Specification {
     def "should find user access"() {
 
         given:
-            userAccessDao.findUserAccess(loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(userAccess)
+            userAccessDao.findUserAccess(userAccess) >> CompletableFuture.completedFuture(userAccess)
 
         when:
-            def result = userAccessService.findUserAccess(loc.getId(), user2.getId())
+            def result = userAccessService.findUserAccess(userAccess)
 
         then:
             UserAccess access = result.get()
@@ -62,16 +53,15 @@ class UserAccessServiceTest extends Specification {
     def "should change user access"() {
 
         given:
-            userAccessDao.findUserAccess(loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(userAccess)
-            userAccessDao.changeUserAccess(userAccess.getTitle(), loc.getId(), user2.getId()) >> CompletableFuture.completedFuture(null)
+            userAccessDao.changeUserAccess(userAccess) >> CompletableFuture.completedFuture(null)
 
         when:
-            def result = userAccessService.changeUserAccess(loc.getId(), user2.getId())
+            def result = userAccessService.changeUserAccess(userAccess)
 
         then:
             def saveResult = result?.get()
             saveResult == null
 
-            1 * userAccessDao.changeUserAccess("READ", loc.getId(), user2.getId())
+            1 * userAccessDao.changeUserAccess(userAccess)
     }
 }

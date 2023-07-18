@@ -24,6 +24,8 @@ CREATE TABLE accesses
     location_id INT,
     user_id     INT,
     PRIMARY KEY (id),
-    FOREIGN KEY (location_id) REFERENCES locations (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (location_id) REFERENCES locations (id)
+        ON DELETE CASCADE
 );

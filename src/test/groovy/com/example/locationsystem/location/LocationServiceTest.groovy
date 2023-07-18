@@ -1,6 +1,5 @@
 package com.example.locationsystem.location
 
-import com.example.locationsystem.user.User
 import spock.lang.Specification
 import spock.lang.Subject
 
@@ -13,8 +12,6 @@ class LocationServiceTest extends Specification {
     @Subject
     LocationService locationService
 
-    User user
-    User user2
     Location loc
     List<Location> locs
 
@@ -23,11 +20,7 @@ class LocationServiceTest extends Specification {
         locationDao = Mock(LocationDao)
         locationService = new LocationServiceImpl(locationDao)
 
-        user = new User("user1", "user1", "pass1")
-        loc = new Location("name1", "add1", user)
-
-        user2 = new User("user2", "user2", "pass2")
-
+        loc = new Location("name1", "add1", 1L)
 
         locs = new ArrayList()
         locs << loc
@@ -39,7 +32,7 @@ class LocationServiceTest extends Specification {
             locationDao.saveLocation(loc) >> CompletableFuture.completedFuture(null)
 
         when:
-            def result = locationService.saveLocation(loc)
+            def result = locationService.saveLocation(loc, 1L)
 
         then:
             def saveResult = result?.get()
@@ -50,114 +43,79 @@ class LocationServiceTest extends Specification {
     def "findLocationByNameAndUserId should return location"() {
 
         given:
-            locationDao.findLocationByNameAndUserId(loc.getName(), user.getId()) >> CompletableFuture.completedFuture(loc)
+            locationDao.findLocationByNameAndUserId(loc.getName(), 1) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findLocationByNameAndUserId(loc.getName(), user.getId())
+            def result = locationService.findLocationByNameAndUserId(loc.getName(), 1)
 
         then:
             def location = result.get()
             location == loc
     }
 
-    def "findAllAddedLocations should return locations"() {
+    def "findAllUserLocations should return locations"() {
 
         given:
-            locationDao.findAllAddedLocations(user.getId()) >> CompletableFuture.completedFuture(locs)
+            locationDao.findAllUserLocations(1) >> CompletableFuture.completedFuture(locs)
 
         when:
-            def result = locationService.findAllAddedLocations(user.getId())
+            def result = locationService.findAllUserLocations(1)
 
         then:
             def locsList = result.get()
             locsList == locs
     }
 
-    def "findAllLocationsWithAccess should return locations"() {
+    def "findLocationInUserLocations should return location"() {
 
         given:
-            locationDao.findAllLocationsWithAccess(user2.getId(), "ADMIN") >> CompletableFuture.completedFuture(locs)
+            locationDao.findLocationInUserLocations(1, 1) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationDao.findAllLocationsWithAccess(user2.getId(), "ADMIN")
+            def result = locationService.findLocationInUserLocations(1, 1)
 
         then:
-            def locsList = result.get()
-            locsList == locs
+            def location = result.get()
+            location == loc
     }
 
     def "should delete location"() {
 
         given:
-            locationDao.deleteLocation(loc.getId(), user.getId()) >> CompletableFuture.completedFuture(null)
+            locationDao.deleteLocation(loc.getId(), 1) >> CompletableFuture.completedFuture(null)
 
         when:
-            def result = locationService.deleteLocation(loc.getId(), user.getId())
+            def result = locationService.deleteLocation(loc.getId(), 1)
 
         then:
             def saveResult = result?.get()
             saveResult == null
-            1 * locationDao.deleteLocation(loc.getId(), user.getId())
+            1 * locationDao.deleteLocation(loc.getId(), 1)
     }
 
     def "should find not shared locations to user"() {
 
         given:
-            locationDao.findNotSharedToUserLocations(user.getId(), user2.getId()) >> CompletableFuture.completedFuture(locs)
+            locationDao.findNotSharedToUserLocation(1, 2, 2) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findNotSharedToUserLocations(user.getId(), user2.getId())
+            def result = locationService.findNotSharedToUserLocation(1, 2, 2)
 
         then:
-            def locsList = result.get()
-            locsList == locs
+            def location = result.get()
+            location == loc
     }
 
     def "should find location by id"() {
 
         given:
-            locationDao.findById(loc.getId()) >> CompletableFuture.completedFuture(loc)
+            locationDao.findLocationById(loc.getId()) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findById(loc.getId())
+            def result = locationService.findLocationById(loc.getId())
 
         then:
             def location = result.get()
             loc == location
-    }
-
-    def "should find location by name"() {
-
-        given:
-            locationDao.findLocationByName(loc.getName()) >> CompletableFuture.completedFuture(loc)
-
-        when:
-            def result = locationService.findLocationByName(loc.getName())
-
-        then:
-            def location = result.get()
-            loc == location
-    }
-
-    def "should find all my locations"() {
-
-        given:
-            def adminAccessLoc = new Location("name2", "add2", user2)
-            def readAccessLoc = new Location("name3", "add3", user2)
-            def adminAccessLocs = [adminAccessLoc]
-            def readAccessLocs = [readAccessLoc]
-
-            def allMyLocs = locs + adminAccessLocs + readAccessLocs
-
-            locationDao.findAllAddedLocations(user.getId()) >> CompletableFuture.completedFuture(locs)
-            locationDao.findAllLocationsWithAccess(user.getId(), "ADMIN") >> CompletableFuture.completedFuture(adminAccessLocs)
-            locationDao.findAllLocationsWithAccess(user.getId(), "READ") >> CompletableFuture.completedFuture(readAccessLocs)
-
-        when:
-            def result = locationService.findAllMyLocations(user.getId())
-
-        then:
-            def locations = result.get()
-            locations == allMyLocs
     }
 }
