@@ -1,5 +1,6 @@
 package com.example.locationsystem.aspect;
 
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -16,14 +17,10 @@ import java.lang.reflect.Parameter;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class CookieAspect {
 
     private final HttpServletRequest request;
-
-    public CookieAspect(HttpServletRequest request) {
-
-        this.request = request;
-    }
 
     @Around("@annotation(com.example.locationsystem.annotation.GetAndValidUserId)")
     public Object validateUserId(ProceedingJoinPoint joinPoint) throws Throwable {

@@ -679,7 +679,6 @@ class LocationControllerIntegrationTest extends Specification {
 
             mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isOk())
-                .andExpect(header().string("message", "Location deleted successfully"))
 
         then:
             def deletedLocationService = locationService.deleteLocation(savedLocation.getId(), savedUser.getId())

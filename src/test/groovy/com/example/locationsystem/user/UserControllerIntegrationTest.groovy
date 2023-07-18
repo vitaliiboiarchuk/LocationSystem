@@ -230,7 +230,6 @@ class UserControllerIntegrationTest extends Specification {
 
             mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isOk())
-                .andExpect(header().string("message", "User deleted successfully"))
 
         then:
             User deletedUserService = userService.findUserByEmail(user.getUsername()).join()

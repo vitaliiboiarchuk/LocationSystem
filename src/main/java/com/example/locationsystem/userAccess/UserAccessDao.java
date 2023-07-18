@@ -1,5 +1,6 @@
 package com.example.locationsystem.userAccess;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,14 +15,10 @@ import java.util.concurrent.CompletableFuture;
 
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class UserAccessDao {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserAccessDao(JdbcTemplate jdbcTemplate) {
-
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     private static final String SAVE_USER_ACCESS = "INSERT INTO accesses(title,location_id,user_id) VALUES(?,?,?)";
     private static final String FIND_USER_ACCESS = "SELECT * FROM accesses WHERE location_id = ? AND user_id = ?";
@@ -41,7 +38,7 @@ public class UserAccessDao {
             }, keyHolder);
             Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
             userAccess.setId(generatedId);
-            log.info("User access saved: {}", userAccess);
+            log.info("User access saved={}", userAccess);
             return userAccess;
         });
     }
@@ -61,7 +58,7 @@ public class UserAccessDao {
 
         return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update(CHANGE_USER_ACCESS, userAccess.getLocationId(), userAccess.getUserId());
-            log.info("User access changedLocation ID: {}, User ID: {}",
+            log.info("User access changed. Location ID={}, User ID={}",
                 userAccess.getLocationId(), userAccess.getUserId());
         });
     }

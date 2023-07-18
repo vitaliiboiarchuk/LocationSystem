@@ -1,5 +1,6 @@
 package com.example.locationsystem.location;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,14 +16,10 @@ import java.util.concurrent.CompletableFuture;
 
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class LocationDao {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public LocationDao(JdbcTemplate jdbcTemplate) {
-
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     private static final String FIND_ALL_USER_LOCATIONS = "SELECT locations.id, locations.name, locations.address, " +
         "locations.user_id " +
@@ -48,7 +45,7 @@ public class LocationDao {
         return CompletableFuture.supplyAsync(() -> {
             List<Location> locations = jdbcTemplate.query(FIND_ALL_USER_LOCATIONS,
                 BeanPropertyRowMapper.newInstance(Location.class), id, id);
-            log.info("All user locations by user id found: {}", id);
+            log.info("All user locations by user id={} found", id);
             return locations;
         });
     }
@@ -59,7 +56,7 @@ public class LocationDao {
             jdbcTemplate.query(FIND_LOCATION_IN_USER_LOCATIONS,
                     BeanPropertyRowMapper.newInstance(Location.class), userId, locationId, userId, locationId)
                 .stream()
-                .peek(loc -> log.info("Location found in user locations by user userId: {} and location userId: {}",
+                .peek(loc -> log.info("Location found in user locations by userId={} and locationId={}",
                     userId, locationId))
                 .findFirst()
                 .orElse(null));
@@ -71,7 +68,7 @@ public class LocationDao {
             jdbcTemplate.query(FIND_LOCATION_BY_NAME_AND_USER_ID,
                     BeanPropertyRowMapper.newInstance(Location.class), name, userId)
                 .stream()
-                .peek(location -> log.info("Location found by name and user id. Name: {}, User id: {}", name, userId))
+                .peek(location -> log.info("Location found by name={} and user id={}", name, userId))
                 .findFirst()
                 .orElse(null));
     }
@@ -113,7 +110,7 @@ public class LocationDao {
             jdbcTemplate.query(FIND_NOT_SHARED_TO_USER_LOCATION,
                 BeanPropertyRowMapper.newInstance(Location.class), id, locId, id, locId, userId)
                 .stream()
-                .peek(loc -> log.info("Found not shared to user locations with User id: {} and location id: {} and User to share id: {}", id, locId, userId))
+                .peek(loc -> log.info("Found not shared to user locations with user id={} and location id={} and user to share id={}", id, locId, userId))
                 .findFirst()
                 .orElse(null));
     }
@@ -122,7 +119,7 @@ public class LocationDao {
 
         return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update(DELETE_LOCATION, id, userId);
-            log.info("Location deleted by location id: {} and user id: {}", id, userId);
+            log.info("Location deleted by location id={} and user id={}", id, userId);
         });
     }
 }

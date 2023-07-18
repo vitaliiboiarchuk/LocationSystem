@@ -5,8 +5,8 @@ import com.example.locationsystem.user.User;
 import com.example.locationsystem.user.UserService;
 import com.example.locationsystem.userAccess.UserAccess;
 import com.example.locationsystem.userAccess.UserAccessService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,32 +20,19 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 @RestController
 @RequestMapping("/location")
 @Log4j2
+@RequiredArgsConstructor
 public class LocationController {
 
     private final UserService userService;
     private final LocationService locationService;
     private final UserAccessService userAccessService;
 
-    public LocationController(
-        UserService userService,
-        LocationService locationService,
-        UserAccessService userAccessService
-    ) {
-
-        this.userService = userService;
-        this.locationService = locationService;
-        this.userAccessService = userAccessService;
-    }
-
     @GetAndValidUserId
     @GetMapping("")
     public CompletableFuture<ResponseEntity<List<Location>>> showLocations(Long userId) {
 
         return locationService.findAllUserLocations(userId)
-            .thenApply(locations -> {
-                log.info("Show locations successful");
-                return ResponseEntity.ok(locations);
-            });
+            .thenApply(ResponseEntity::ok);
     }
 
     @GetAndValidUserId
@@ -61,7 +48,7 @@ public class LocationController {
 
         return locExistsFuture.thenCompose(locExists -> {
             if (locExists != null) {
-                log.warn("Add location failed. Location with the same name already exists. Location Name: {}",
+                log.warn("Add location failed. Location with the same name already exists. Location Name={}",
                     location.getName());
                 throw new AlreadyExistsException("Location with that name already exists");
             }
@@ -81,14 +68,14 @@ public class LocationController {
         return locationService.findLocationInUserLocations(userId, locationId)
             .thenCompose(location -> {
                 if (location == null) {
-                    log.warn("No location found with id: {}", locationId);
+                    log.warn("No location found with id={}", locationId);
                     throw new LocationNotFoundException("No location found");
                 }
-                log.info("Location found with id: {}", locationId);
+                log.info("Location found with id={}", locationId);
                 return userService.findAllUsersOnLocation(locationId, userId);
             })
             .thenApply(users -> {
-                log.info("Show friends on location successful. Location ID: {}", locationId);
+                log.info("Show friends on location successful. Location ID={}", locationId);
                 return ResponseEntity.ok(users);
             });
     }
@@ -107,20 +94,20 @@ public class LocationController {
 
         return locationFuture.thenCombine(userToShareFuture, (location, userToShare) -> {
             if (location == null) {
-                log.warn("Share location failed. No location to share with id: {}", userAccess.getLocationId());
+                log.warn("Share location failed. No location to share with id={}", userAccess.getLocationId());
                 throw new LocationNotFoundException("No location to share");
             }
             if (userToShare == null) {
-                log.warn("Share location failed. No user to share with id: {}", userAccess.getUserId());
+                log.warn("Share location failed. No user to share with id={}", userAccess.getUserId());
                 throw new NoUserToShareException("No user to share");
             }
             if (userAccess.getUserId().equals(userId)) {
-                log.warn("Share location failed. Can't share location to yourself. User id: {}", userId);
+                log.warn("Share location failed. Can't share location to yourself. User id={}", userId);
                 throw new SelfShareException("Can't share to yourself");
             }
 
             return userAccessService.saveUserAccess(userAccess).thenApply(result -> {
-                log.info("Share location successful. Location ID: {}, User ID: {}", userAccess.getLocationId(),
+                log.info("Share location successful. Location ID={}, User ID={}", userAccess.getLocationId(),
                     userAccess.getUserId());
                 return ResponseEntity.ok(result);
             });
@@ -138,12 +125,12 @@ public class LocationController {
 
         return locationOwnerFuture.thenCombine(userAccessFuture, (owner, access) -> {
             if (owner == null || !owner.getId().equals(userId)) {
-                log.warn("Change access failed. Location owner not found. Location ID: {}",
+                log.warn("Change access failed. Location owner not found. Location ID={}",
                     userAccess.getLocationId());
                 throw new LocationOwnerNotFoundException("Location owner not found");
             }
             if (access == null) {
-                log.warn("Change access failed. User access not found. Location ID: {}, User ID: {}",
+                log.warn("Change access failed. User access not found. Location ID={}, User ID={}",
                     userAccess.getLocationId(), userAccess.getUserId());
                 throw new UserAccessNotFoundException("User access not found");
             }
@@ -151,7 +138,7 @@ public class LocationController {
                 .thenCompose(result ->
                     userAccessService.findUserAccess(userAccess)
                         .thenApply(updatedUserAccess -> {
-                            log.info("Change access successful. Location ID: {}, User ID: {}",
+                            log.info("Change access successful. Location ID={}, User ID={}",
                                 userAccess.getLocationId(), userAccess.getUserId());
                             return ResponseEntity.ok(updatedUserAccess);
                         })
@@ -169,15 +156,13 @@ public class LocationController {
 
         return locationFuture.thenCompose(location -> {
             if (location == null) {
-                log.warn("Location not found. Location name: {}", name);
+                log.warn("Location not found. Location name={}", name);
                 throw new LocationNotFoundException("No location found");
             }
             return locationService.deleteLocation(location.getId(), userId)
                 .thenApply(deleted -> {
-                    log.info("Delete location successful. Location ID: {}", location.getId());
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.add("message", "Location deleted successfully");
-                    return ResponseEntity.ok().headers(headers).build();
+                    log.info("Delete location successful. Location ID={}", location.getId());
+                    return ResponseEntity.ok().build();
                 });
         });
     }

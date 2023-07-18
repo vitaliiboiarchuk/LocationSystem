@@ -1,5 +1,6 @@
 package com.example.locationsystem.user;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,14 +16,10 @@ import java.util.concurrent.CompletableFuture;
 
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(JdbcTemplate jdbcTemplate) {
-
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     private static final String FIND_USER_BY_EMAIL = "SELECT * FROM users WHERE username = ?";
     private static final String FIND_USER_BY_EMAIL_AND_PASSWORD = "SELECT * FROM users WHERE username = ? and " +
@@ -41,7 +38,7 @@ public class UserDao {
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_USER_BY_EMAIL, BeanPropertyRowMapper.newInstance(User.class), email)
                 .stream()
-                .peek(user -> log.info("User found by email: {}", email))
+                .peek(user -> log.info("User found by email={}", email))
                 .findFirst()
                 .orElse(null)
         );
@@ -80,7 +77,7 @@ public class UserDao {
             Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
 
             user.setId(generatedId);
-            log.info("User saved: {}", user);
+            log.info("User saved={}", user);
             return user;
         });
     }
@@ -89,7 +86,7 @@ public class UserDao {
 
         return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update(DELETE_USER_BY_EMAIL, email);
-            log.info("Deleted user by username: {}", email);
+            log.info("Deleted user by username={}", email);
         });
     }
 
@@ -108,7 +105,7 @@ public class UserDao {
         return CompletableFuture.supplyAsync(() -> {
             List<User> users = jdbcTemplate.query(FIND_ALL_USERS_ON_LOCATION,
                 BeanPropertyRowMapper.newInstance(User.class), locationId, userId);
-            log.info("Found all users with access on location. Location ID: {}, User ID: {}",
+            log.info("Found all users with access on location. Location ID={}, User ID={}",
                 locationId, userId);
             return users;
         });
@@ -119,7 +116,7 @@ public class UserDao {
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_LOCATION_OWNER, BeanPropertyRowMapper.newInstance(User.class), locationId)
             .stream()
-            .peek(user -> log.info("Location owner found. Location ID: {}", locationId))
+            .peek(user -> log.info("Location owner found. Location ID={}", locationId))
             .findFirst()
             .orElse(null));
     }
