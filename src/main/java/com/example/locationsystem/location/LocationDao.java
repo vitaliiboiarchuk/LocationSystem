@@ -12,7 +12,10 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
+import com.example.locationsystem.exception.ControllerExceptions.*;
 
 @Component
 @Log4j2
@@ -29,12 +32,12 @@ public class LocationDao {
     private static final String FIND_LOCATION_BY_NAME_AND_USER_ID = "SELECT * FROM locations WHERE name = ? AND " +
         "user_id = ?";
     private static final String SAVE_LOCATION = "INSERT INTO locations(name,address,user_id) VALUES (?,?,?)";
-    private static final String FIND_LOCATION_BY_ID = "SELECT * FROM locations WHERE id = ?";
     private static final String FIND_NOT_SHARED_TO_USER_LOCATION = "SELECT l.* FROM locations l LEFT JOIN accesses a" +
-        " ON l.id = a.location_id WHERE (l.user_id = ? AND l.id = ? OR (a.user_id = ? AND a.title = 'ADMIN' AND a.location_id = ?)) AND (l.id NOT IN " +
+        " ON l.id = a.location_id WHERE (l.user_id = ? AND l.id = ? OR (a.user_id = ? AND a.title = 'ADMIN' AND a" +
+        ".location_id = ?)) AND (l.id NOT IN " +
         "(SELECT l.id FROM locations l JOIN accesses a ON l.id = a.location_id WHERE a.user_id = ? AND a.title IN " +
-        "('ADMIN', 'READ')))";
-    private static final String DELETE_LOCATION = "DELETE FROM locations WHERE id = ? AND user_id = ?";
+        "('ADMIN', 'READ'))) AND EXISTS (SELECT 1 FROM users u WHERE u.id = ?);";
+    private static final String DELETE_LOCATION = "DELETE FROM locations WHERE name = ? AND user_id = ?";
     private static final String FIND_LOCATION_IN_USER_LOCATIONS = "SELECT locations.id, locations.name, locations" +
         ".address, locations.user_id FROM locations JOIN accesses ON locations.id = accesses.location_id WHERE " +
         "accesses.user_id = ? AND locations.id = ? UNION SELECT id, name, address, user_id FROM locations WHERE " +
@@ -56,21 +59,25 @@ public class LocationDao {
             jdbcTemplate.query(FIND_LOCATION_IN_USER_LOCATIONS,
                     BeanPropertyRowMapper.newInstance(Location.class), userId, locationId, userId, locationId)
                 .stream()
-                .peek(loc -> log.info("Location found in user locations by userId={} and locationId={}",
+                .peek(loc -> log.info("Location found in user locations by user id={} and location id={}",
                     userId, locationId))
                 .findFirst()
-                .orElse(null));
+                .orElseThrow(() -> {
+                        log.warn("Location not found in user locations by user id={} and location id={}", userId,
+                            locationId);
+                        throw new LocationNotFoundException("Location not found");
+                    }
+                ));
     }
 
-    public CompletableFuture<Location> findLocationByNameAndUserId(String name, Long userId) {
+    public CompletableFuture<Optional<Location>> findLocationByNameAndUserId(String name, Long userId) {
 
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_LOCATION_BY_NAME_AND_USER_ID,
                     BeanPropertyRowMapper.newInstance(Location.class), name, userId)
                 .stream()
                 .peek(location -> log.info("Location found by name={} and user id={}", name, userId))
-                .findFirst()
-                .orElse(null));
+                .findFirst());
     }
 
     public CompletableFuture<Location> saveLocation(Location location) {
@@ -94,32 +101,27 @@ public class LocationDao {
         });
     }
 
-    public CompletableFuture<Location> findLocationById(Long id) {
-
-        return CompletableFuture.supplyAsync(() ->
-            jdbcTemplate.query(FIND_LOCATION_BY_ID,
-                    BeanPropertyRowMapper.newInstance(Location.class), id)
-                .stream()
-                .findFirst()
-                .orElse(null));
-    }
-
     public CompletableFuture<Location> findNotSharedToUserLocation(Long id, Long locId, Long userId) {
 
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_NOT_SHARED_TO_USER_LOCATION,
-                BeanPropertyRowMapper.newInstance(Location.class), id, locId, id, locId, userId)
+                    BeanPropertyRowMapper.newInstance(Location.class), id, locId, id, locId, userId, userId)
                 .stream()
-                .peek(loc -> log.info("Found not shared to user locations with user id={} and location id={} and user to share id={}", id, locId, userId))
+                .peek(loc -> log.info("Found not shared to user location by owner id={}, location id={}, user to " +
+                    "share id={}", id, locId, userId))
                 .findFirst()
-                .orElse(null));
+                .orElseThrow(() -> {
+                    log.warn("Location or user not found by owner id={}, location id={}, user to share id={}",
+                        id, locId, userId);
+                    throw new LocationOrUserNotFoundException("Location or user not found");
+                }));
     }
 
-    public CompletableFuture<Void> deleteLocation(Long id, Long userId) {
+    public CompletableFuture<Void> deleteLocation(String name, Long userId) {
 
         return CompletableFuture.runAsync(() -> {
-            jdbcTemplate.update(DELETE_LOCATION, id, userId);
-            log.info("Location deleted by location id={} and user id={}", id, userId);
+            jdbcTemplate.update(DELETE_LOCATION, name, userId);
+            log.info("Location deleted by location name={} and user id={}", name, userId);
         });
     }
 }

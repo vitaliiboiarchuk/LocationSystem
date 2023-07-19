@@ -34,25 +34,17 @@ public class ControllerExceptions {
         }
     }
 
+    public static class LocationOrUserNotFoundException extends RuntimeException {
+
+        public LocationOrUserNotFoundException(String message) {
+
+            super(message);
+        }
+    }
+
     public static class UserAccessNotFoundException extends RuntimeException {
 
         public UserAccessNotFoundException(String message) {
-
-            super(message);
-        }
-    }
-
-    public static class NoUserToShareException extends RuntimeException {
-
-        public NoUserToShareException(String message) {
-
-            super(message);
-        }
-    }
-
-    public static class SelfShareException extends RuntimeException {
-
-        public SelfShareException(String message) {
 
             super(message);
         }

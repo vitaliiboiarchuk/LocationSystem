@@ -13,6 +13,8 @@ import java.sql.Statement;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+import com.example.locationsystem.exception.ControllerExceptions.*;
+
 @Component
 @Log4j2
 @RequiredArgsConstructor
@@ -21,7 +23,8 @@ public class UserAccessDao {
     private final JdbcTemplate jdbcTemplate;
 
     private static final String SAVE_USER_ACCESS = "INSERT INTO accesses(title,location_id,user_id) VALUES(?,?,?)";
-    private static final String FIND_USER_ACCESS = "SELECT * FROM accesses WHERE location_id = ? AND user_id = ?";
+    private static final String FIND_USER_ACCESS = "SELECT * FROM accesses a JOIN locations l ON a.location_id = l.id" +
+        " WHERE a.location_id = ? AND a.user_id = ? AND l.user_id = ?";
     private static final String CHANGE_USER_ACCESS = "UPDATE accesses SET title = CASE WHEN title = 'ADMIN' THEN " +
         "'READ' WHEN title = 'READ' THEN 'ADMIN' ELSE title END WHERE location_id = ? AND user_id = ?";
 
@@ -38,27 +41,34 @@ public class UserAccessDao {
             }, keyHolder);
             Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
             userAccess.setId(generatedId);
-            log.info("User access saved={}", userAccess);
+            log.info("User access={} saved", userAccess);
             return userAccess;
         });
     }
 
-    public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess) {
+    public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess, Long userId) {
 
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_USER_ACCESS,
                     BeanPropertyRowMapper.newInstance(UserAccess.class), userAccess.getLocationId(),
-                    userAccess.getUserId())
+                    userAccess.getUserId(), userId)
                 .stream()
+                .peek(access -> log.info("User access found by location id={}, user to share id={}, owner id={}",
+                    userAccess.getLocationId(), userAccess.getUserId(), userId))
                 .findFirst()
-                .orElse(null));
+                .orElseThrow(() -> {
+                        log.warn("User access not found by location id={}, user to share id={}, owner id={}",
+                            userAccess.getLocationId(), userAccess.getUserId(), userId);
+                        throw new UserAccessNotFoundException("User access not found");
+                    }
+                ));
     }
 
     public CompletableFuture<Void> changeUserAccess(UserAccess userAccess) {
 
         return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update(CHANGE_USER_ACCESS, userAccess.getLocationId(), userAccess.getUserId());
-            log.info("User access changed. Location ID={}, User ID={}",
+            log.info("User access changed by location id={}, user id={}",
                 userAccess.getLocationId(), userAccess.getUserId());
         });
     }

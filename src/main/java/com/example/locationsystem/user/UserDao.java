@@ -1,5 +1,6 @@
 package com.example.locationsystem.user;
 
+import com.example.locationsystem.utils.EmailUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -12,7 +13,10 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
+import com.example.locationsystem.exception.ControllerExceptions.*;
 
 @Component
 @Log4j2
@@ -20,28 +24,26 @@ import java.util.concurrent.CompletableFuture;
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
+    private final EmailUtils emailUtils;
 
     private static final String FIND_USER_BY_EMAIL = "SELECT * FROM users WHERE username = ?";
     private static final String FIND_USER_BY_EMAIL_AND_PASSWORD = "SELECT * FROM users WHERE username = ? and " +
         "password = ?";
     private static final String SAVE_USER = "INSERT INTO users (name,password,username) VALUES (?,?,?)";
     private static final String DELETE_USER_BY_EMAIL = "DELETE FROM users WHERE username = ?";
-    private static final String FIND_USER_BY_ID = "SELECT * FROM users WHERE id = ?";
     private static final String FIND_ALL_USERS_ON_LOCATION = "SELECT users.id,users.name,users.username,users" +
         ".password FROM users JOIN accesses ON users.id = accesses.user_id WHERE accesses.location_id = ? AND users" +
         ".id != ?";
-    private static final String FIND_LOCATION_OWNER = "SELECT users.id, users.name, users.password, users.username " +
-        "FROM locations JOIN users ON locations.user_id = users.id WHERE locations.id = ?";
+    private static final String FIND_LOCATION_OWNER = "SELECT u.id, u.name, u.password, u.username FROM users u JOIN " +
+        "locations l ON u.id = l.user_id WHERE l.name = ? AND u.id = ?;";
 
-    public CompletableFuture<User> findUserByEmail(String email) {
+    public CompletableFuture<Optional<User>> findUserByEmail(String email) {
 
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_USER_BY_EMAIL, BeanPropertyRowMapper.newInstance(User.class), email)
                 .stream()
-                .peek(user -> log.info("User found by email={}", email))
-                .findFirst()
-                .orElse(null)
-        );
+                .peek(user -> log.info("User found by email={}", emailUtils.hideEmail(email)))
+                .findFirst());
     }
 
     public CompletableFuture<User> findUserByEmailAndPassword(String email, String password) {
@@ -51,9 +53,13 @@ public class UserDao {
             return jdbcTemplate.query(FIND_USER_BY_EMAIL_AND_PASSWORD, BeanPropertyRowMapper.newInstance(User.class),
                     email, hashedPassword)
                 .stream()
-                .peek(user -> log.info("User found by email and password"))
+                .peek(user -> log.info("User found by email={} and password", emailUtils.hideEmail(email)))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> {
+                        log.warn("User not found by email={} and password", emailUtils.hideEmail(email));
+                        throw new InvalidLoginOrPasswordException("Invalid login or password");
+                    }
+                );
         });
     }
 
@@ -77,7 +83,7 @@ public class UserDao {
             Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
 
             user.setId(generatedId);
-            log.info("User saved={}", user);
+            log.info("User with email={} saved", emailUtils.hideEmail(user.getUsername()));
             return user;
         });
     }
@@ -86,18 +92,8 @@ public class UserDao {
 
         return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update(DELETE_USER_BY_EMAIL, email);
-            log.info("Deleted user by username={}", email);
+            log.info("User deleted by email={}", emailUtils.hideEmail(email));
         });
-    }
-
-    public CompletableFuture<User> findUserById(Long id) {
-
-        return CompletableFuture.supplyAsync(() ->
-            jdbcTemplate.query(FIND_USER_BY_ID,
-                    BeanPropertyRowMapper.newInstance(User.class), id)
-                .stream()
-                .findFirst()
-                .orElse(null));
     }
 
     public CompletableFuture<List<User>> findAllUsersOnLocation(Long locationId, Long userId) {
@@ -105,20 +101,22 @@ public class UserDao {
         return CompletableFuture.supplyAsync(() -> {
             List<User> users = jdbcTemplate.query(FIND_ALL_USERS_ON_LOCATION,
                 BeanPropertyRowMapper.newInstance(User.class), locationId, userId);
-            log.info("Found all users with access on location. Location ID={}, User ID={}",
+            log.info("Found all users with access on location by location id={} and user id={}",
                 locationId, userId);
             return users;
         });
     }
 
-    public CompletableFuture<User> findLocationOwner(Long locationId) {
+    public CompletableFuture<User> findLocationOwner(String locationName, Long ownerId) {
 
         return CompletableFuture.supplyAsync(() ->
-            jdbcTemplate.query(FIND_LOCATION_OWNER, BeanPropertyRowMapper.newInstance(User.class), locationId)
-            .stream()
-            .peek(user -> log.info("Location owner found. Location ID={}", locationId))
-            .findFirst()
-            .orElse(null));
+            jdbcTemplate.query(FIND_LOCATION_OWNER, BeanPropertyRowMapper.newInstance(User.class), locationName, ownerId)
+                .stream()
+                .peek(owner -> log.info("Location owner found by location name={}, owner id={}", locationName, ownerId))
+                .findFirst()
+                .orElseThrow(() -> {
+                    log.warn("Location owner not found by location name={}, owner id={}", locationName, ownerId);
+                    throw new LocationOwnerNotFoundException("Location owner not found");
+                }));
     }
-
 }

@@ -8,5 +8,5 @@ public interface UserAccessService {
 
     CompletableFuture<Void> changeUserAccess(UserAccess userAccess);
 
-    CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess);
+    CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess, Long userId);
 }
