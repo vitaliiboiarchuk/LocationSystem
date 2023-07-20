@@ -1,13 +1,17 @@
 package com.example.locationsystem.user
 
+import com.example.locationsystem.utils.EmailUtils
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.BeanPropertyRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.jdbc.datasource.DriverManagerDataSource
 import spock.lang.Specification
 import spock.lang.Subject
 
+import javax.sql.DataSource
 import java.util.concurrent.CompletableFuture
 
+@SpringBootTest
 class UserDaoTest extends Specification {
 
     @Subject
@@ -15,16 +19,16 @@ class UserDaoTest extends Specification {
 
     JdbcTemplate jdbcTemplate
 
+    @Autowired
+    DataSource dataSource
+
+    EmailUtils emailUtils
+
     def setup() {
 
-        DriverManagerDataSource dataSource = new DriverManagerDataSource()
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver")
-        dataSource.setUrl("jdbc:mysql://localhost:3306/task1")
-        dataSource.setUsername("root")
-        dataSource.setPassword("")
-
         jdbcTemplate = new JdbcTemplate(dataSource)
-        userDao = new UserDao(jdbcTemplate)
+        emailUtils = new EmailUtils()
+        userDao = new UserDao(jdbcTemplate, emailUtils)
 
         jdbcTemplate.execute("INSERT INTO users(id,name,username,password) VALUES(1,'name1','user1',SHA2('pass1',256))")
         jdbcTemplate.execute("INSERT INTO locations(id,address,name,user_id) VALUES(1,'Add1','name1',1)")
@@ -39,11 +43,11 @@ class UserDaoTest extends Specification {
     def "should find user by email"() {
 
         when:
-            CompletableFuture<User> futureResult = userDao.findUserByEmail("user1")
+            CompletableFuture<Optional<User>> futureResult = userDao.findUserByEmail("user1")
 
         then:
-            User user = futureResult.get()
-            user.getUsername() == 'user1'
+            futureResult.get().isPresent()
+            futureResult.get().get().getUsername() == 'user1'
     }
 
     def "should find user by email and password"() {
@@ -73,16 +77,6 @@ class UserDaoTest extends Specification {
             jdbcTemplate.execute("DELETE FROM users WHERE username = 'user4'")
     }
 
-    def "should find user by id"() {
-
-        when:
-            CompletableFuture<User> futureResult = userDao.findUserById(1L)
-
-        then:
-            User user = futureResult.get()
-            user.getUsername() == 'user1'
-    }
-
     def "should find all users with access on location"() {
 
         given:
@@ -106,7 +100,7 @@ class UserDaoTest extends Specification {
     def "should find location owner"() {
 
         when:
-            CompletableFuture<User> futureResult = userDao.findLocationOwner(1L)
+            CompletableFuture<User> futureResult = userDao.findLocationOwner('name1',1L)
 
         then:
             User owner = futureResult.get()
@@ -127,5 +121,15 @@ class UserDaoTest extends Specification {
         and:
             def deletedUser = jdbcTemplate.query("SELECT * FROM users WHERE username = ?", BeanPropertyRowMapper.newInstance(User.class), 2L)
             deletedUser.isEmpty()
+    }
+
+    def "should find user by id"() {
+
+        when:
+            CompletableFuture<User> futureResult = userDao.findUserById(1L)
+
+        then:
+            User user = futureResult.get()
+            user.getUsername() == 'user1'
     }
 }

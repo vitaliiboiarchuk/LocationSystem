@@ -58,4 +58,11 @@ public class LocationServiceImpl implements LocationService {
         log.info("Deleting location by location name={} and user id={}", name, userId);
         return locationDao.deleteLocation(name, userId);
     }
+
+    @Override
+    public CompletableFuture<Location> findLocationById(Long id) {
+
+        log.info("Finding location by id={}", id);
+        return locationDao.findLocationById(id);
+    }
 }

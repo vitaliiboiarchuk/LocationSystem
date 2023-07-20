@@ -1,14 +1,17 @@
 package com.example.locationsystem.location
 
 import com.example.locationsystem.userAccess.UserAccess
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.BeanPropertyRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.jdbc.datasource.DriverManagerDataSource
 import spock.lang.Specification
 import spock.lang.Subject
 
+import javax.sql.DataSource
 import java.util.concurrent.CompletableFuture
 
+@SpringBootTest
 class LocationDaoTest extends Specification {
 
     @Subject
@@ -16,13 +19,10 @@ class LocationDaoTest extends Specification {
 
     JdbcTemplate jdbcTemplate
 
-    def setup() {
+    @Autowired
+    DataSource dataSource
 
-        DriverManagerDataSource dataSource = new DriverManagerDataSource()
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver")
-        dataSource.setUrl("jdbc:mysql://localhost:3306/task1")
-        dataSource.setUsername("root")
-        dataSource.setPassword("")
+    def setup() {
 
         jdbcTemplate = new JdbcTemplate(dataSource)
         locationDao = new LocationDao(jdbcTemplate)
@@ -71,18 +71,17 @@ class LocationDaoTest extends Specification {
     def "should find location by name and userId"() {
 
         when:
-            CompletableFuture<Location> futureResult = locationDao.findLocationByNameAndUserId("gym", 1L)
+            CompletableFuture<Optional<Location>> futureResult = locationDao.findLocationByNameAndUserId("gym", 1L)
 
         then:
-            Location location = futureResult.get()
-            location.getAddress() == 'naleczowska'
+            futureResult.get().isPresent()
+            futureResult.get().get().getAddress() == 'naleczowska'
     }
 
     def "should save location"() {
 
         given:
-            jdbcTemplate.execute("INSERT INTO users(id,name,password,username) VALUES(4,'name1','pass1','user1')")
-            Location location = new Location("title1", "add1", 4)
+            Location location = new Location("title1", "add1", 1)
 
         when:
             CompletableFuture<Location> futureResult = locationDao.saveLocation(location)
@@ -94,7 +93,6 @@ class LocationDaoTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute("DELETE FROM locations WHERE name = 'title1'")
-            jdbcTemplate.execute("DELETE FROM users WHERE username = 'user1'")
     }
 
     def "should delete location"() {
@@ -104,7 +102,7 @@ class LocationDaoTest extends Specification {
             jdbcTemplate.execute("INSERT INTO accesses(id,title,location_id,user_id) VALUES(5,'ADMIN',5,2)")
 
         when:
-            CompletableFuture<Void> futureResult = locationDao.deleteLocation(5L, 1L)
+            CompletableFuture<Void> futureResult = locationDao.deleteLocation('name1', 1L)
 
         then:
             futureResult.get() == null

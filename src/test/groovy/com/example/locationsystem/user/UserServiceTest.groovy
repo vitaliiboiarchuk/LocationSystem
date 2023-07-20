@@ -1,5 +1,6 @@
 package com.example.locationsystem.user
 
+import com.example.locationsystem.utils.EmailUtils
 import spock.lang.Specification
 import spock.lang.Subject
 
@@ -14,26 +15,29 @@ class UserServiceTest extends Specification {
 
     User user
 
+    EmailUtils emailUtils
+
     def setup() {
 
         userDao = Mock(UserDao)
-        userService = new UserServiceImpl(userDao)
+        emailUtils = new EmailUtils()
+        userService = new UserServiceImpl(userDao, emailUtils)
 
-        user = new User("user1", "name1", "pass1")
+        user = new User("user1@gmail.com", "name1", "pass1")
         user.setId(1L)
     }
 
     def "findByEmail should return User"() {
 
         given:
-            userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(user)
+            userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
 
         when:
             def result = userService.findUserByEmail(user.getUsername())
 
         then:
-            def user = result.get()
-            user == this.user
+            result.get().isPresent()
+            result.get().get().getUsername() == user.getUsername()
     }
 
     def "findByEmailAndPassword should return User"() {
@@ -45,8 +49,7 @@ class UserServiceTest extends Specification {
             def result = userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword())
 
         then:
-            def user = result.get()
-            user == this.user
+            result.get() == user
     }
 
     def "saveUser should insert User into database"() {
@@ -61,19 +64,6 @@ class UserServiceTest extends Specification {
             def savedUser = result?.get()
             savedUser == null
             1 * userDao.saveUser(user)
-    }
-
-    def "findById should return User"() {
-
-        given:
-            userDao.findUserById(user.getId()) >> CompletableFuture.completedFuture(user)
-
-        when:
-            def result = userService.findUserById(user.getId())
-
-        then:
-            def user = result.get()
-            user == this.user
     }
 
     def "findAllUsersWithAccessOnLocation should return Users"() {
@@ -94,10 +84,10 @@ class UserServiceTest extends Specification {
     def "should return owner if owner is found"() {
 
         given:
-            userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(user)
+            userDao.findLocationOwner("test", 1L) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findLocationOwner(1L)
+            def result = userService.findLocationOwner("test", 1L)
 
         then:
             result.get() == user
@@ -115,5 +105,17 @@ class UserServiceTest extends Specification {
             def saveResult = result?.get()
             saveResult == null
             1 * userDao.deleteUserByEmail("test@gmail.com")
+    }
+
+    def "findById should return User"() {
+
+        given:
+            userDao.findUserById(user.getId()) >> CompletableFuture.completedFuture(user)
+
+        when:
+            def result = userService.findUserById(user.getId())
+
+        then:
+            result.get() == user
     }
 }

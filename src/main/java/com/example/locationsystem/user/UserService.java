@@ -18,4 +18,6 @@ public interface UserService {
 
     CompletableFuture<User> findLocationOwner(String locationName, Long ownerId);
 
+    CompletableFuture<User> findUserById(Long id);
+
 }

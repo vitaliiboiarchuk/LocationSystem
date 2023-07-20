@@ -34,6 +34,14 @@ public class ControllerExceptions {
         }
     }
 
+    public static class UserNotFoundException extends RuntimeException {
+
+        public UserNotFoundException(String message) {
+
+            super(message);
+        }
+    }
+
     public static class LocationOrUserNotFoundException extends RuntimeException {
 
         public LocationOrUserNotFoundException(String message) {

@@ -43,14 +43,14 @@ class LocationServiceTest extends Specification {
     def "findLocationByNameAndUserId should return location"() {
 
         given:
-            locationDao.findLocationByNameAndUserId(loc.getName(), 1) >> CompletableFuture.completedFuture(loc)
+            locationDao.findLocationByNameAndUserId(loc.getName(), 1) >> CompletableFuture.completedFuture(Optional.of(loc))
 
         when:
             def result = locationService.findLocationByNameAndUserId(loc.getName(), 1)
 
         then:
-            def location = result.get()
-            location == loc
+            result.get().isPresent()
+            result.get().get().getName() == loc.getName()
     }
 
     def "findAllUserLocations should return locations"() {
@@ -62,8 +62,7 @@ class LocationServiceTest extends Specification {
             def result = locationService.findAllUserLocations(1)
 
         then:
-            def locsList = result.get()
-            locsList == locs
+            result.get() == locs
     }
 
     def "findLocationInUserLocations should return location"() {
@@ -75,22 +74,21 @@ class LocationServiceTest extends Specification {
             def result = locationService.findLocationInUserLocations(1, 1)
 
         then:
-            def location = result.get()
-            location == loc
+            result.get() == loc
     }
 
     def "should delete location"() {
 
         given:
-            locationDao.deleteLocation(loc.getId(), 1) >> CompletableFuture.completedFuture(null)
+            locationDao.deleteLocation(loc.getName(), 1) >> CompletableFuture.completedFuture(null)
 
         when:
-            def result = locationService.deleteLocation(loc.getId(), 1)
+            def result = locationService.deleteLocation(loc.getName(), 1)
 
         then:
             def saveResult = result?.get()
             saveResult == null
-            1 * locationDao.deleteLocation(loc.getId(), 1)
+            1 * locationDao.deleteLocation(loc.getName(), 1)
     }
 
     def "should find not shared locations to user"() {
@@ -102,8 +100,7 @@ class LocationServiceTest extends Specification {
             def result = locationService.findNotSharedToUserLocation(1, 2, 2)
 
         then:
-            def location = result.get()
-            location == loc
+            result.get() == loc
     }
 
     def "should find location by id"() {
@@ -115,7 +112,6 @@ class LocationServiceTest extends Specification {
             def result = locationService.findLocationById(loc.getId())
 
         then:
-            def location = result.get()
-            loc == location
+            result.get() == loc
     }
 }

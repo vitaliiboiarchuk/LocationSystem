@@ -42,6 +42,7 @@ public class LocationDao {
         ".address, locations.user_id FROM locations JOIN accesses ON locations.id = accesses.location_id WHERE " +
         "accesses.user_id = ? AND locations.id = ? UNION SELECT id, name, address, user_id FROM locations WHERE " +
         "user_id = ? AND locations.id = ?";
+    private static final String FIND_LOCATION_BY_ID = "SELECT * FROM locations WHERE id = ?";
 
     public CompletableFuture<List<Location>> findAllUserLocations(Long id) {
 
@@ -96,7 +97,7 @@ public class LocationDao {
             Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
             location.setId(generatedId);
 
-            log.info("Location saved: {}", location);
+            log.info("Location saved={}", location);
             return location;
         });
     }
@@ -123,5 +124,18 @@ public class LocationDao {
             jdbcTemplate.update(DELETE_LOCATION, name, userId);
             log.info("Location deleted by location name={} and user id={}", name, userId);
         });
+    }
+
+    public CompletableFuture<Location> findLocationById(Long id) {
+
+        return CompletableFuture.supplyAsync(() ->
+            jdbcTemplate.query(FIND_LOCATION_BY_ID,
+                    BeanPropertyRowMapper.newInstance(Location.class), id)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> {
+                    log.warn("Location not found by id={}", id);
+                    throw new LocationNotFoundException("Location not found");
+                }));
     }
 }

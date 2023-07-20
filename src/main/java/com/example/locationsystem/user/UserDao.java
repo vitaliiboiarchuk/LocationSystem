@@ -36,6 +36,7 @@ public class UserDao {
         ".id != ?";
     private static final String FIND_LOCATION_OWNER = "SELECT u.id, u.name, u.password, u.username FROM users u JOIN " +
         "locations l ON u.id = l.user_id WHERE l.name = ? AND u.id = ?;";
+    private static final String FIND_USER_BY_ID = "SELECT * FROM users WHERE id = ?";
 
     public CompletableFuture<Optional<User>> findUserByEmail(String email) {
 
@@ -110,13 +111,27 @@ public class UserDao {
     public CompletableFuture<User> findLocationOwner(String locationName, Long ownerId) {
 
         return CompletableFuture.supplyAsync(() ->
-            jdbcTemplate.query(FIND_LOCATION_OWNER, BeanPropertyRowMapper.newInstance(User.class), locationName, ownerId)
+            jdbcTemplate.query(FIND_LOCATION_OWNER, BeanPropertyRowMapper.newInstance(User.class), locationName,
+                    ownerId)
                 .stream()
                 .peek(owner -> log.info("Location owner found by location name={}, owner id={}", locationName, ownerId))
                 .findFirst()
                 .orElseThrow(() -> {
                     log.warn("Location owner not found by location name={}, owner id={}", locationName, ownerId);
                     throw new LocationOwnerNotFoundException("Location owner not found");
+                }));
+    }
+
+    public CompletableFuture<User> findUserById(Long id) {
+
+        return CompletableFuture.supplyAsync(() ->
+            jdbcTemplate.query(FIND_USER_BY_ID,
+                    BeanPropertyRowMapper.newInstance(User.class), id)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> {
+                    log.warn("User not found by id={}", id);
+                    throw new UserNotFoundException("User not found");
                 }));
     }
 }
