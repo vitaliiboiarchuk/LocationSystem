@@ -1,30 +1,47 @@
 package com.example.locationsystem.user
 
+import com.example.locationsystem.event.EventService
 import com.example.locationsystem.utils.EmailUtils
+import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Subject
 
 import java.util.concurrent.CompletableFuture
 
 class UserServiceTest extends Specification {
 
+    @Shared
+    def user = new User(id: 100L, username: "user1@gmail.com", name: "name1", password: "pass1")
+
     UserDao userDao
-
-    @Subject
     UserService userService
-
-    User user
-
     EmailUtils emailUtils
+    EventService eventService
 
     def setup() {
 
         userDao = Mock(UserDao)
-        emailUtils = new EmailUtils()
-        userService = new UserServiceImpl(userDao, emailUtils)
+        emailUtils = Mock(EmailUtils)
+        eventService = Mock(EventService)
+        userService = new UserServiceImpl(userDao, emailUtils, eventService)
+    }
 
-        user = new User("user1@gmail.com", "name1", "pass1")
-        user.setId(1L)
+    def "saveUser should insert user into database"() {
+
+        given:
+            def userToSave = Stub(User)
+
+        and:
+            def expectedUser = Stub(User)
+
+        when:
+            def result = userService.saveUser(userToSave).join()
+
+        then:
+            result == expectedUser
+
+        then:
+            1 * userDao.saveUser(userToSave) >> CompletableFuture.completedFuture(expectedUser)
+            1 * eventService.publishUserCreatedEvent(expectedUser) >> null
     }
 
     def "findByEmail should return User"() {
@@ -33,11 +50,11 @@ class UserServiceTest extends Specification {
             userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
 
         when:
-            def result = userService.findUserByEmail(user.getUsername())
+            def result = userService.findUserByEmail(user.getUsername()).join()
 
         then:
-            result.get().isPresent()
-            result.get().get().getUsername() == user.getUsername()
+            result.isPresent()
+            result.get().getUsername() == user.getUsername()
     }
 
     def "findByEmailAndPassword should return User"() {
@@ -50,20 +67,6 @@ class UserServiceTest extends Specification {
 
         then:
             result.get() == user
-    }
-
-    def "saveUser should insert User into database"() {
-
-        given:
-            userDao.saveUser(user) >> CompletableFuture.completedFuture(null)
-
-        when:
-            def result = userService.saveUser(user)
-
-        then:
-            def savedUser = result?.get()
-            savedUser == null
-            1 * userDao.saveUser(user)
     }
 
     def "findAllUsersWithAccessOnLocation should return Users"() {
@@ -93,18 +96,14 @@ class UserServiceTest extends Specification {
             result.get() == user
     }
 
-    def "should delete user"() {
-
-        given:
-            userDao.deleteUserByEmail("test@gmail.com") >> CompletableFuture.completedFuture(null)
+    def "deleteUserByEmail should delete user and publish an event if the user exists"() {
 
         when:
-            def result = userService.deleteUserByEmail("test@gmail.com")
+            userService.deleteUserByEmail("user1@gmail.com")
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
-            1 * userDao.deleteUserByEmail("test@gmail.com")
+            1 * userDao.deleteUserByEmail("user1@gmail.com") >> CompletableFuture.completedFuture(Optional.of(user))
+            1 * eventService.publishUserDeletedEvent(user) >> null
     }
 
     def "findById should return User"() {

@@ -1,7 +1,9 @@
 package com.example.locationsystem.user;
 
 import com.example.locationsystem.utils.EmailUtils;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,10 +23,11 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 @RestController
 @Log4j2
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
 
-    private final UserService userService;
-    private final EmailUtils emailUtils;
+    UserService userService;
+    EmailUtils emailUtils;
 
     @PostMapping("/registration")
     public CompletableFuture<ResponseEntity<User>> registerPost(@Valid @RequestBody User user) {
@@ -32,7 +35,8 @@ public class UserController {
         return userService.findUserByEmail(user.getUsername())
             .thenCompose(existingUser -> {
                 if (existingUser.isPresent()) {
-                    log.warn("Registration failed. User with email={} already exists", emailUtils.hideEmail(user.getUsername()));
+                    log.warn("Registration failed. User with email={} already exists",
+                        emailUtils.hideEmail(user.getUsername()));
                     throw new AlreadyExistsException("User already exists");
                 }
                 return userService.saveUser(user)

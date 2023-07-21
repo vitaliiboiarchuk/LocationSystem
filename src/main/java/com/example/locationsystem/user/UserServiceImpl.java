@@ -1,7 +1,10 @@
 package com.example.locationsystem.user;
 
+import com.example.locationsystem.event.EventService;
 import com.example.locationsystem.utils.EmailUtils;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -12,10 +15,12 @@ import java.util.concurrent.CompletableFuture;
 @Service
 @Log4j2
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements UserService {
 
-    private final UserDao userDao;
-    private final EmailUtils emailUtils;
+    UserDao userDao;
+    EmailUtils emailUtils;
+    EventService eventService;
 
     @Override
     public CompletableFuture<Optional<User>> findUserByEmail(String email) {
@@ -35,7 +40,11 @@ public class UserServiceImpl implements UserService {
     public CompletableFuture<User> saveUser(User user) {
 
         log.info("Saving user with email={}", emailUtils.hideEmail(user.getUsername()));
-        return userDao.saveUser(user);
+        return userDao.saveUser(user)
+            .thenApply(savedUser -> {
+                eventService.publishUserCreatedEvent(savedUser);
+                return savedUser;
+            });
     }
 
     @Override
@@ -50,7 +59,9 @@ public class UserServiceImpl implements UserService {
     public CompletableFuture<Void> deleteUserByEmail(String email) {
 
         log.info("Deleting user by email={}", emailUtils.hideEmail(email));
-        return userDao.deleteUserByEmail(email);
+        return userDao.deleteUserByEmail(email)
+            .thenAccept(optionalDeletedUser ->
+                optionalDeletedUser.ifPresent(eventService::publishUserDeletedEvent));
     }
 
     @Override

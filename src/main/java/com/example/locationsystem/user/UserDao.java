@@ -1,7 +1,9 @@
 package com.example.locationsystem.user;
 
 import com.example.locationsystem.utils.EmailUtils;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,10 +23,11 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 @Component
 @Log4j2
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserDao {
 
-    private final JdbcTemplate jdbcTemplate;
-    private final EmailUtils emailUtils;
+    JdbcTemplate jdbcTemplate;
+    EmailUtils emailUtils;
 
     private static final String FIND_USER_BY_EMAIL = "SELECT * FROM users WHERE username = ?";
     private static final String FIND_USER_BY_EMAIL_AND_PASSWORD = "SELECT * FROM users WHERE username = ? and " +
@@ -89,11 +92,13 @@ public class UserDao {
         });
     }
 
-    public CompletableFuture<Void> deleteUserByEmail(String email) {
+    public CompletableFuture<Optional<User>> deleteUserByEmail(String email) {
 
-        return CompletableFuture.runAsync(() -> {
+        return CompletableFuture.supplyAsync(() -> {
+            CompletableFuture<Optional<User>> deletedUser = findUserByEmail(email);
             jdbcTemplate.update(DELETE_USER_BY_EMAIL, email);
             log.info("User deleted by email={}", emailUtils.hideEmail(email));
+            return deletedUser.join();
         });
     }
 
@@ -111,13 +116,16 @@ public class UserDao {
     public CompletableFuture<User> findLocationOwner(String locationName, Long ownerId) {
 
         return CompletableFuture.supplyAsync(() ->
-            jdbcTemplate.query(FIND_LOCATION_OWNER, BeanPropertyRowMapper.newInstance(User.class), locationName,
+            jdbcTemplate.query(FIND_LOCATION_OWNER, BeanPropertyRowMapper.newInstance(User.class),
+                    locationName,
                     ownerId)
                 .stream()
-                .peek(owner -> log.info("Location owner found by location name={}, owner id={}", locationName, ownerId))
+                .peek(owner -> log.info("Location owner found by location name={}, owner id={}",
+                    locationName, ownerId))
                 .findFirst()
                 .orElseThrow(() -> {
-                    log.warn("Location owner not found by location name={}, owner id={}", locationName, ownerId);
+                    log.warn("Location owner not found by location name={}, owner id={}", locationName,
+                        ownerId);
                     throw new LocationOwnerNotFoundException("Location owner not found");
                 }));
     }

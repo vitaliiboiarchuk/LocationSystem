@@ -1,40 +1,44 @@
 package com.example.locationsystem.userAccess
 
+import com.example.locationsystem.event.EventService
+import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Subject
 
 import java.util.concurrent.CompletableFuture
 
 class UserAccessServiceTest extends Specification {
 
+    @Shared
+    def userAccess = new UserAccess(id: 100L, title: "ADMIN", userId: 1L, locationId: 2L)
+
     UserAccessDao userAccessDao
-
-    @Subject
     UserAccessService userAccessService
-
-    UserAccess userAccess
+    EventService eventService
 
     def setup() {
 
         userAccessDao = Mock(UserAccessDao)
-        userAccessService = new UserAccessServiceImpl(userAccessDao)
-
-        userAccess = new UserAccess("ADMIN", 1, 2)
+        eventService = Mock(EventService)
+        userAccessService = new UserAccessServiceImpl(userAccessDao, eventService)
     }
 
     def "should insert user access into database"() {
 
         given:
-            userAccessDao.saveUserAccess(userAccess) >> CompletableFuture.completedFuture(null)
+            def userAccessToSave = Stub(UserAccess)
+
+        and:
+            def expectedUserAccess = Stub(UserAccess)
 
         when:
-            def result = userAccessService.saveUserAccess(userAccess)
+            def result = userAccessService.saveUserAccess(userAccessToSave).join()
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
+            result == expectedUserAccess
 
-            1 * userAccessDao.saveUserAccess(userAccess)
+        then:
+            1 * userAccessDao.saveUserAccess(userAccessToSave) >> CompletableFuture.completedFuture(expectedUserAccess)
+            1 * eventService.publishUserAccessCreatedEvent(expectedUserAccess) >> null
     }
 
     def "should find user access"() {

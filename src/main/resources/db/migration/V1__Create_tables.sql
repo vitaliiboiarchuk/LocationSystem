@@ -29,3 +29,10 @@ CREATE TABLE accesses
     FOREIGN KEY (location_id) REFERENCES locations (id)
         ON DELETE CASCADE
 );
+
+CREATE TABLE history (
+                         id INT AUTO_INCREMENT PRIMARY KEY,
+                         object_type VARCHAR(255),
+                         action_type VARCHAR(50),
+                         details TEXT
+);

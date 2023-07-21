@@ -1,6 +1,8 @@
 package com.example.locationsystem.userAccess;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,9 +20,10 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 @Component
 @Log4j2
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserAccessDao {
 
-    private final JdbcTemplate jdbcTemplate;
+    JdbcTemplate jdbcTemplate;
 
     private static final String SAVE_USER_ACCESS = "INSERT INTO accesses(title,location_id,user_id) VALUES(?,?,?)";
     private static final String FIND_USER_ACCESS = "SELECT * FROM accesses a JOIN locations l ON a.location_id = l.id" +

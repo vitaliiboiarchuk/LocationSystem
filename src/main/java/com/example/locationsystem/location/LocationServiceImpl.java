@@ -1,6 +1,9 @@
 package com.example.locationsystem.location;
 
+import com.example.locationsystem.event.EventService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -11,9 +14,11 @@ import java.util.concurrent.CompletableFuture;
 @Service
 @Log4j2
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class LocationServiceImpl implements LocationService {
 
-    private final LocationDao locationDao;
+    LocationDao locationDao;
+    EventService eventService;
 
     @Override
     public CompletableFuture<List<Location>> findAllUserLocations(Long userId) {
@@ -41,7 +46,11 @@ public class LocationServiceImpl implements LocationService {
 
         location.setUserId(ownerId);
         log.info("Saving location={}", location);
-        return locationDao.saveLocation(location);
+        return locationDao.saveLocation(location)
+            .thenApply(savedLocation -> {
+                eventService.publishLocationCreatedEvent(savedLocation);
+                return savedLocation;
+            });
     }
 
     @Override
@@ -56,7 +65,10 @@ public class LocationServiceImpl implements LocationService {
     public CompletableFuture<Void> deleteLocation(String name, Long userId) {
 
         log.info("Deleting location by location name={} and user id={}", name, userId);
-        return locationDao.deleteLocation(name, userId);
+        return locationDao.deleteLocation(name, userId)
+            .thenAccept(optionalDeletedLocation ->
+                optionalDeletedLocation.ifPresent(eventService::publishLocationDeletedEvent)
+            );
     }
 
     @Override

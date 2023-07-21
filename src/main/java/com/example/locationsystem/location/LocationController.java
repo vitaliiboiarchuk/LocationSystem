@@ -1,11 +1,13 @@
 package com.example.locationsystem.location;
 
-import com.example.locationsystem.annotation.GetAndValidUserId;
+import com.example.locationsystem.aspect.GetAndValidUserId;
 import com.example.locationsystem.user.User;
 import com.example.locationsystem.user.UserService;
 import com.example.locationsystem.userAccess.UserAccess;
 import com.example.locationsystem.userAccess.UserAccessService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,11 +22,12 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 @RequestMapping("/location")
 @Log4j2
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class LocationController {
 
-    private final UserService userService;
-    private final LocationService locationService;
-    private final UserAccessService userAccessService;
+    UserService userService;
+    LocationService locationService;
+    UserAccessService userAccessService;
 
     @GetAndValidUserId
     @GetMapping("")

@@ -1,6 +1,8 @@
 package com.example.locationsystem.location;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,9 +22,10 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 @Component
 @Log4j2
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class LocationDao {
 
-    private final JdbcTemplate jdbcTemplate;
+    JdbcTemplate jdbcTemplate;
 
     private static final String FIND_ALL_USER_LOCATIONS = "SELECT locations.id, locations.name, locations.address, " +
         "locations.user_id " +
@@ -118,11 +121,13 @@ public class LocationDao {
                 }));
     }
 
-    public CompletableFuture<Void> deleteLocation(String name, Long userId) {
+    public CompletableFuture<Optional<Location>> deleteLocation(String name, Long userId) {
 
-        return CompletableFuture.runAsync(() -> {
+        return CompletableFuture.supplyAsync(() -> {
+            CompletableFuture<Optional<Location>> deletedLocation = findLocationByNameAndUserId(name, userId);
             jdbcTemplate.update(DELETE_LOCATION, name, userId);
             log.info("Location deleted by location name={} and user id={}", name, userId);
+            return deletedLocation.join();
         });
     }
 

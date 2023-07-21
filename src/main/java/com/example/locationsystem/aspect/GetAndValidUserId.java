@@ -1,4 +1,4 @@
-package com.example.locationsystem.annotation;
+package com.example.locationsystem.aspect;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

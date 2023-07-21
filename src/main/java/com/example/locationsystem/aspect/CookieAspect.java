@@ -1,6 +1,8 @@
 package com.example.locationsystem.aspect;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -18,11 +20,12 @@ import java.lang.reflect.Parameter;
 @Aspect
 @Component
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CookieAspect {
 
-    private final HttpServletRequest request;
+    HttpServletRequest request;
 
-    @Around("@annotation(com.example.locationsystem.annotation.GetAndValidUserId)")
+    @Around("@annotation(com.example.locationsystem.aspect.GetAndValidUserId)")
     public Object validateUserId(ProceedingJoinPoint joinPoint) throws Throwable {
 
         Cookie userCookie = WebUtils.getCookie(request, "user");

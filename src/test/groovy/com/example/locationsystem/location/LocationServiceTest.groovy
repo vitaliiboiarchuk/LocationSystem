@@ -1,7 +1,8 @@
 package com.example.locationsystem.location
 
+import com.example.locationsystem.event.EventService
+import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Subject
 
 import java.util.concurrent.CompletableFuture
 
@@ -9,18 +10,20 @@ class LocationServiceTest extends Specification {
 
     LocationDao locationDao
 
-    @Subject
     LocationService locationService
 
-    Location loc
+    EventService eventService
+
+    @Shared
+    def loc = new Location(name: "name1", address: "add1", userId: 1L)
     List<Location> locs
 
     def setup() {
 
         locationDao = Mock(LocationDao)
-        locationService = new LocationServiceImpl(locationDao)
+        eventService = Mock(EventService)
 
-        loc = new Location("name1", "add1", 1L)
+        locationService = new LocationServiceImpl(locationDao, eventService)
 
         locs = new ArrayList()
         locs << loc
@@ -29,15 +32,20 @@ class LocationServiceTest extends Specification {
     def "saveLocation should insert location into database"() {
 
         given:
-            locationDao.saveLocation(loc) >> CompletableFuture.completedFuture(null)
+            def locationToSave = Stub(Location)
+
+        and:
+            def expectedLocation = Stub(Location)
 
         when:
-            def result = locationService.saveLocation(loc, 1L)
+            def result = locationService.saveLocation(locationToSave, 100L).join()
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
-            1 * locationDao.saveLocation(loc)
+            result == expectedLocation
+
+        then:
+            1 * locationDao.saveLocation(locationToSave) >> CompletableFuture.completedFuture(expectedLocation)
+            1 * eventService.publishLocationCreatedEvent(expectedLocation) >> null
     }
 
     def "findLocationByNameAndUserId should return location"() {
@@ -79,16 +87,12 @@ class LocationServiceTest extends Specification {
 
     def "should delete location"() {
 
-        given:
-            locationDao.deleteLocation(loc.getName(), 1) >> CompletableFuture.completedFuture(null)
-
         when:
-            def result = locationService.deleteLocation(loc.getName(), 1)
+            locationService.deleteLocation("name1", 1)
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
-            1 * locationDao.deleteLocation(loc.getName(), 1)
+            1 * locationDao.deleteLocation("name1", 1) >> CompletableFuture.completedFuture(Optional.of(loc))
+            1 * eventService.publishLocationDeletedEvent(loc) >> null
     }
 
     def "should find not shared locations to user"() {
