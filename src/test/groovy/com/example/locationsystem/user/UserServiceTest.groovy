@@ -84,18 +84,6 @@ class UserServiceTest extends Specification {
             users == accessUsers
     }
 
-    def "should return owner if owner is found"() {
-
-        given:
-            userDao.findLocationOwner("test", 1L) >> CompletableFuture.completedFuture(user)
-
-        when:
-            def result = userService.findLocationOwner("test", 1L)
-
-        then:
-            result.get() == user
-    }
-
     def "deleteUserByEmail should delete user and publish an event if the user exists"() {
 
         when:

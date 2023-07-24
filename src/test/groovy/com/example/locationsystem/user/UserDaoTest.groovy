@@ -94,16 +94,6 @@ class UserDaoTest extends Specification {
             jdbcTemplate.execute("DELETE FROM users WHERE id = 300")
     }
 
-    def "should find location owner"() {
-
-        when:
-            CompletableFuture<User> futureResult = userDao.findLocationOwner('name1', 100L)
-
-        then:
-            User owner = futureResult.get()
-            owner.getName() == 'name1'
-    }
-
     def "should delete user by email"() {
 
         given:

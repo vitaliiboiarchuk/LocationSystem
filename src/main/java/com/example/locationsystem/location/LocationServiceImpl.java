@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import com.example.locationsystem.exception.ControllerExceptions.*;
+
 @Service
 @Log4j2
 @RequiredArgsConstructor
@@ -66,8 +68,15 @@ public class LocationServiceImpl implements LocationService {
 
         log.info("Deleting location by location name={} and user id={}", name, userId);
         return locationDao.findLocationByNameAndUserId(name, userId)
-            .thenCompose(locationOptional -> locationDao.deleteLocation(name, userId)
-                .thenAccept(result -> locationOptional.ifPresent(eventService::publishLocationDeletedEvent)));
+            .thenCompose(locationOptional -> {
+                if (locationOptional.isPresent()) {
+                    return locationDao.deleteLocation(name, userId)
+                        .thenAccept(result -> locationOptional.ifPresent(eventService::publishLocationDeletedEvent));
+                } else {
+                    log.warn("Location not found by name={} and user id={}", name, userId);
+                    throw new LocationNotFoundException("Location not found");
+                }
+            });
     }
 
     @Override

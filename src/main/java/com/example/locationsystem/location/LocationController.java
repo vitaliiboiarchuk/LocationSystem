@@ -99,9 +99,8 @@ public class LocationController {
         Long userId, @PathVariable String name
     ) {
 
-        return userService.findLocationOwner(name, userId)
-            .thenCompose(owner -> locationService.deleteLocation(name, userId)
-                .thenApply(deleted -> ResponseEntity.ok().build()));
+        return locationService.deleteLocation(name, userId)
+            .thenApply(deleted -> ResponseEntity.ok().build());
     }
 }
 

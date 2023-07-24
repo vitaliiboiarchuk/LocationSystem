@@ -1,10 +1,13 @@
 package com.example.locationsystem.location
 
 import com.example.locationsystem.event.EventService
+import com.example.locationsystem.exception.ControllerExceptions
 import spock.lang.Shared
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
+
 
 class LocationServiceTest extends Specification {
 
@@ -94,6 +97,25 @@ class LocationServiceTest extends Specification {
             1 * locationDao.findLocationByNameAndUserId("name1", 1) >> CompletableFuture.completedFuture(Optional.of(loc))
             1 * locationDao.deleteLocation("name1", 1) >> CompletableFuture.completedFuture(null)
             1 * eventService.publishLocationDeletedEvent(loc) >> null
+    }
+
+    def "should throw LocationNotFoundException when location not found"() {
+
+        when:
+            CompletableFuture<Void> result = locationService.deleteLocation("name", 100)
+
+        then:
+            1 * locationDao.findLocationByNameAndUserId("name", 100) >> CompletableFuture.completedFuture(Optional.empty())
+            0 * locationDao.deleteLocation("name", 100)
+            0 * eventService.publishLocationDeletedEvent(_)
+
+        then:
+            try {
+                result.get()
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause()
+                assert cause instanceof ControllerExceptions.LocationNotFoundException
+            }
     }
 
     def "should find not shared locations to user"() {

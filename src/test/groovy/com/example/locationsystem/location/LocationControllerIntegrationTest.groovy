@@ -423,7 +423,6 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
     }
 
-
     def "should change user access successfully"() {
 
         given:
@@ -553,14 +552,8 @@ class LocationControllerIntegrationTest extends Specification {
                 .andExpect(status().isOk())
 
         then:
-            def deletedLocationService = locationService.deleteLocation(savedLocation.getName(), savedUser.getId())
-                .thenCompose({ result4 -> locationService.findLocationByNameAndUserId(savedLocation.getName(), savedLocation.getUserId()) })
-                .join()
-            deletedLocationService.isEmpty()
-
-        and:
-            def deletedLocationDao = locationService.deleteLocation(savedLocation.getName(), savedUser.getId())
-                .thenCompose({ result5 -> locationService.findLocationByNameAndUserId(savedLocation.getName(), savedLocation.getUserId()) })
+            def deletedLocationDao = locationDao.deleteLocation(savedLocation.getName(), savedUser.getId())
+                .thenCompose({ result5 -> locationDao.findLocationByNameAndUserId(savedLocation.getName(), savedLocation.getUserId()) })
                 .join()
             deletedLocationDao.isEmpty()
 
@@ -568,7 +561,7 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
     }
 
-    def "should throw LocationOwnerNotFoundException when location owner not found for deleting location"() {
+    def "should throw LocationNotFoundException when location owner not found for deleting location"() {
 
         given:
             def owner = new User("test@gmail.com", "test", "pass")
@@ -580,7 +573,6 @@ class LocationControllerIntegrationTest extends Specification {
 
             def location = new Location("name", "address", savedOwner.getId())
 
-
         when:
             def result = mockMvc.perform(delete("/location/delete/{name}/", location.getName())
                 .cookie(new Cookie("user", savedOwner.getId().toString())))
@@ -589,7 +581,7 @@ class LocationControllerIntegrationTest extends Specification {
 
             mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().string("errorMessage", "Location owner not found"))
+                .andExpect(header().string("errorMessage", "Location not found"))
 
         then:
             0 * locationService.deleteLocation(location.getId(), savedOwner.getId())

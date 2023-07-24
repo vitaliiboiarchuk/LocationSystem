@@ -16,8 +16,6 @@ public interface UserService {
 
     CompletableFuture<Void> deleteUserByEmail(String email);
 
-    CompletableFuture<User> findLocationOwner(String locationName, Long ownerId);
-
     CompletableFuture<User> findUserById(Long id);
 
 }
