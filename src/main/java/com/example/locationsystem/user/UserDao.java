@@ -92,13 +92,11 @@ public class UserDao {
         });
     }
 
-    public CompletableFuture<Optional<User>> deleteUserByEmail(String email) {
+    public CompletableFuture<Void> deleteUserByEmail(String email) {
 
-        return CompletableFuture.supplyAsync(() -> {
-            CompletableFuture<Optional<User>> deletedUser = findUserByEmail(email);
+        return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update(DELETE_USER_BY_EMAIL, email);
             log.info("User deleted by email={}", emailUtils.hideEmail(email));
-            return deletedUser.join();
         });
     }
 

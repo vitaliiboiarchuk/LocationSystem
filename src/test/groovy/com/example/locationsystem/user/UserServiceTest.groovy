@@ -102,7 +102,8 @@ class UserServiceTest extends Specification {
             userService.deleteUserByEmail("user1@gmail.com")
 
         then:
-            1 * userDao.deleteUserByEmail("user1@gmail.com") >> CompletableFuture.completedFuture(Optional.of(user))
+            1 * userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
+            1 * userDao.deleteUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(null)
             1 * eventService.publishUserDeletedEvent(user) >> null
     }
 

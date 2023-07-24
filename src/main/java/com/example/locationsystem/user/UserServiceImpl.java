@@ -59,9 +59,9 @@ public class UserServiceImpl implements UserService {
     public CompletableFuture<Void> deleteUserByEmail(String email) {
 
         log.info("Deleting user by email={}", emailUtils.hideEmail(email));
-        return userDao.deleteUserByEmail(email)
-            .thenAccept(optionalDeletedUser ->
-                optionalDeletedUser.ifPresent(eventService::publishUserDeletedEvent));
+        return userDao.findUserByEmail(email)
+            .thenCompose(userOptional -> userDao.deleteUserByEmail(email)
+                .thenAccept(result -> userOptional.ifPresent(eventService::publishUserDeletedEvent)));
     }
 
     @Override

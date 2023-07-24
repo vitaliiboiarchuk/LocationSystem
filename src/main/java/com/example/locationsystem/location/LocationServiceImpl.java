@@ -65,10 +65,9 @@ public class LocationServiceImpl implements LocationService {
     public CompletableFuture<Void> deleteLocation(String name, Long userId) {
 
         log.info("Deleting location by location name={} and user id={}", name, userId);
-        return locationDao.deleteLocation(name, userId)
-            .thenAccept(optionalDeletedLocation ->
-                optionalDeletedLocation.ifPresent(eventService::publishLocationDeletedEvent)
-            );
+        return locationDao.findLocationByNameAndUserId(name, userId)
+            .thenCompose(locationOptional -> locationDao.deleteLocation(name, userId)
+                .thenAccept(result -> locationOptional.ifPresent(eventService::publishLocationDeletedEvent)));
     }
 
     @Override

@@ -91,7 +91,8 @@ class LocationServiceTest extends Specification {
             locationService.deleteLocation("name1", 1)
 
         then:
-            1 * locationDao.deleteLocation("name1", 1) >> CompletableFuture.completedFuture(Optional.of(loc))
+            1 * locationDao.findLocationByNameAndUserId("name1", 1) >> CompletableFuture.completedFuture(Optional.of(loc))
+            1 * locationDao.deleteLocation("name1", 1) >> CompletableFuture.completedFuture(null)
             1 * eventService.publishLocationDeletedEvent(loc) >> null
     }
 

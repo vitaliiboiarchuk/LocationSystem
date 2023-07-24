@@ -121,13 +121,11 @@ public class LocationDao {
                 }));
     }
 
-    public CompletableFuture<Optional<Location>> deleteLocation(String name, Long userId) {
+    public CompletableFuture<Void> deleteLocation(String name, Long userId) {
 
-        return CompletableFuture.supplyAsync(() -> {
-            CompletableFuture<Optional<Location>> deletedLocation = findLocationByNameAndUserId(name, userId);
+        return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update(DELETE_LOCATION, name, userId);
             log.info("Location deleted by location name={} and user id={}", name, userId);
-            return deletedLocation.join();
         });
     }
 

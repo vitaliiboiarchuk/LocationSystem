@@ -110,13 +110,9 @@ class UserDaoTest extends Specification {
             jdbcTemplate.execute("INSERT INTO users(id,name,username,password) VALUES(200,'name1','test@gmail.com',SHA2('pass1',256))")
 
         when:
-            CompletableFuture<Optional<User>> futureResult = userDao.deleteUserByEmail("test@gmail.com")
+            userDao.deleteUserByEmail("test@gmail.com")
 
         then:
-            def result = futureResult.get()
-            result.get().getUsername() == 'test@gmail.com'
-
-        and:
             def deletedUser = jdbcTemplate.query("SELECT * FROM users WHERE username = ?", BeanPropertyRowMapper.newInstance(User.class), 200L)
             deletedUser.isEmpty()
     }

@@ -99,13 +99,9 @@ class LocationDaoTest extends Specification {
             jdbcTemplate.execute("INSERT INTO accesses(id,title,location_id,user_id) VALUES(500,'ADMIN',500,200)")
 
         when:
-            CompletableFuture<Optional<Location>> futureResult = locationDao.deleteLocation('name1', 100L)
+            locationDao.deleteLocation('name1', 100L)
 
         then:
-            def result = futureResult.get()
-            result.get().getName() == 'name1'
-
-        and:
             def deletedAccess = jdbcTemplate.query("SELECT * FROM accesses WHERE location_id = ?", BeanPropertyRowMapper.newInstance(UserAccess.class), 500L)
             deletedAccess.isEmpty()
             def deletedLocation = jdbcTemplate.query("SELECT * FROM locations WHERE id = ? AND user_id = ?", BeanPropertyRowMapper.newInstance(Location.class), 500L, 100L)
