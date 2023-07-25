@@ -1,6 +1,6 @@
 package com.example.locationsystem.user;
 
-import com.example.locationsystem.utils.EmailUtils;
+import com.example.locationsystem.util.EmailUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -27,7 +27,7 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 public class UserController {
 
     UserService userService;
-    EmailUtils emailUtils;
+    EmailUtil emailUtils;
 
     @PostMapping("/registration")
     public CompletableFuture<ResponseEntity<User>> registerPost(@Valid @RequestBody User user) {

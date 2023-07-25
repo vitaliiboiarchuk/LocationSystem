@@ -1,6 +1,6 @@
 package com.example.locationsystem.user;
 
-import com.example.locationsystem.utils.EmailUtils;
+import com.example.locationsystem.util.EmailUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -27,7 +27,7 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 public class UserDao {
 
     JdbcTemplate jdbcTemplate;
-    EmailUtils emailUtils;
+    EmailUtil emailUtil;
 
     private static final String FIND_USER_BY_EMAIL = "SELECT * FROM users WHERE username = ?";
     private static final String FIND_USER_BY_EMAIL_AND_PASSWORD = "SELECT * FROM users WHERE username = ? and " +
@@ -44,7 +44,7 @@ public class UserDao {
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_USER_BY_EMAIL, BeanPropertyRowMapper.newInstance(User.class), email)
                 .stream()
-                .peek(user -> log.info("User found by email={}", emailUtils.hideEmail(email)))
+                .peek(user -> log.info("User found by email={}", emailUtil.hideEmail(email)))
                 .findFirst());
     }
 
@@ -55,10 +55,10 @@ public class UserDao {
             return jdbcTemplate.query(FIND_USER_BY_EMAIL_AND_PASSWORD, BeanPropertyRowMapper.newInstance(User.class),
                     email, hashedPassword)
                 .stream()
-                .peek(user -> log.info("User found by email={} and password", emailUtils.hideEmail(email)))
+                .peek(user -> log.info("User found by email={} and password", emailUtil.hideEmail(email)))
                 .findFirst()
                 .orElseThrow(() -> {
-                        log.warn("User not found by email={} and password", emailUtils.hideEmail(email));
+                        log.warn("User not found by email={} and password", emailUtil.hideEmail(email));
                         throw new InvalidLoginOrPasswordException("Invalid login or password");
                     }
                 );
@@ -85,7 +85,7 @@ public class UserDao {
             Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
 
             user.setId(generatedId);
-            log.info("User with email={} saved", emailUtils.hideEmail(user.getUsername()));
+            log.info("User with email={} saved", emailUtil.hideEmail(user.getUsername()));
             return user;
         });
     }
@@ -94,7 +94,7 @@ public class UserDao {
 
         return CompletableFuture.runAsync(() -> {
             jdbcTemplate.update(DELETE_USER_BY_EMAIL, email);
-            log.info("User deleted by email={}", emailUtils.hideEmail(email));
+            log.info("User deleted by email={}", emailUtil.hideEmail(email));
         });
     }
 

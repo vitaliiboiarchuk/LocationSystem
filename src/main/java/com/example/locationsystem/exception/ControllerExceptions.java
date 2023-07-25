@@ -18,14 +18,6 @@ public class ControllerExceptions {
         }
     }
 
-    public static class LocationOwnerNotFoundException extends RuntimeException {
-
-        public LocationOwnerNotFoundException(String message) {
-
-            super(message);
-        }
-    }
-
     public static class LocationNotFoundException extends RuntimeException {
 
         public LocationNotFoundException(String message) {

@@ -1,7 +1,8 @@
 package com.example.locationsystem.user
 
 import com.example.locationsystem.event.EventService
-import com.example.locationsystem.utils.EmailUtils
+import com.example.locationsystem.exception.ControllerExceptions
+import com.example.locationsystem.util.EmailUtil
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -14,15 +15,15 @@ class UserServiceTest extends Specification {
 
     UserDao userDao
     UserService userService
-    EmailUtils emailUtils
+    EmailUtil emailUtil
     EventService eventService
 
     def setup() {
 
         userDao = Mock(UserDao)
-        emailUtils = Mock(EmailUtils)
+        emailUtil = Mock(EmailUtil)
         eventService = Mock(EventService)
-        userService = new UserServiceImpl(userDao, emailUtils, eventService)
+        userService = new UserServiceImpl(userDao, emailUtil, eventService)
     }
 
     def "saveUser should insert user into database"() {
@@ -93,6 +94,26 @@ class UserServiceTest extends Specification {
             1 * userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
             1 * userDao.deleteUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(null)
             1 * eventService.publishUserDeletedEvent(user) >> null
+    }
+
+    def "should throw UserNotFoundException when user not found"() {
+
+        when:
+            CompletableFuture<Void> result = userService.deleteUserByEmail("test")
+
+        then:
+            1 * userDao.findUserByEmail("test") >> CompletableFuture.completedFuture(Optional.empty())
+            0 * userDao.deleteUserByEmail("test")
+            0 * eventService.publishUserDeletedEvent(_)
+
+        and:
+            try {
+                result.get()
+            } catch (Exception e) {
+                Throwable cause = e.getCause()
+                cause instanceof ControllerExceptions.UserNotFoundException
+            }
+
     }
 
     def "findById should return User"() {

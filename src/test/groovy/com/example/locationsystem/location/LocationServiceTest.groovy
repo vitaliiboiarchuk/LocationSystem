@@ -6,7 +6,6 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutionException
 
 
 class LocationServiceTest extends Specification {
@@ -109,12 +108,12 @@ class LocationServiceTest extends Specification {
             0 * locationDao.deleteLocation("name", 100)
             0 * eventService.publishLocationDeletedEvent(_)
 
-        then:
+        and:
             try {
                 result.get()
-            } catch (ExecutionException e) {
+            } catch (Exception e) {
                 Throwable cause = e.getCause()
-                assert cause instanceof ControllerExceptions.LocationNotFoundException
+                cause instanceof ControllerExceptions.LocationNotFoundException
             }
     }
 

@@ -1,9 +1,9 @@
-package com.example.locationsystem.utils;
+package com.example.locationsystem.util;
 
 import org.springframework.stereotype.Component;
 
 @Component
-public class EmailUtils {
+public class EmailUtil {
 
     public String hideEmail(String email) {
         int atIndex = email.indexOf("@");

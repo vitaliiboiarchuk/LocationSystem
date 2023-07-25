@@ -1,6 +1,6 @@
 package com.example.locationsystem.user
 
-import com.example.locationsystem.utils.EmailUtils
+import com.example.locationsystem.util.EmailUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.BeanPropertyRowMapper
@@ -15,7 +15,7 @@ class UserDaoTest extends Specification {
 
     UserDao userDao
     JdbcTemplate jdbcTemplate
-    EmailUtils emailUtils
+    EmailUtil emailUtil
 
     @Autowired
     DataSource dataSource
@@ -24,8 +24,8 @@ class UserDaoTest extends Specification {
     def setup() {
 
         jdbcTemplate = new JdbcTemplate(dataSource)
-        emailUtils = new EmailUtils()
-        userDao = new UserDao(jdbcTemplate, emailUtils)
+        emailUtil = new EmailUtil()
+        userDao = new UserDao(jdbcTemplate, emailUtil)
 
         jdbcTemplate.execute("INSERT INTO users(id,name,username,password) VALUES(100,'name1','user1',SHA2('pass1',256))")
         jdbcTemplate.execute("INSERT INTO locations(id,address,name,user_id) VALUES(100,'Add1','name1',100)")
