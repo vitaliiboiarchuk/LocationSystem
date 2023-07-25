@@ -1,78 +1,106 @@
-2023-07-24 16:26:46,484 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
-2023-07-24 16:26:46,499 INFO o.a.j.JMeter: Loading user properties from: /opt/homebrew/Cellar/jmeter/5.5/libexec/bin/user.properties
-2023-07-24 16:26:46,499 INFO o.a.j.JMeter: Loading system properties from: /opt/homebrew/Cellar/jmeter/5.5/libexec/bin/system.properties
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: Copyright (c) 1998-2022 The Apache Software Foundation
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: Version 5.5
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: java.version=17.0.7
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: os.name=Mac OS X
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: os.arch=aarch64
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: os.version=13.4.1
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: file.encoding=UTF-8
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: java.awt.headless=null
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: Max memory     =1073741824
-2023-07-24 16:26:46,503 INFO o.a.j.JMeter: Available Processors =8
-2023-07-24 16:26:46,509 INFO o.a.j.JMeter: Default Locale=English (EN)
-2023-07-24 16:26:46,509 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
-2023-07-24 16:26:46,510 INFO o.a.j.JMeter: JMeterHome=/opt/homebrew/Cellar/jmeter/5.5/libexec
-2023-07-24 16:26:46,510 INFO o.a.j.JMeter: user.dir  =/Users/boyar/Desktop/LocationSystem
-2023-07-24 16:26:46,510 INFO o.a.j.JMeter: PWD       =/Users/boyar/Desktop/LocationSystem
-2023-07-24 16:26:46,511 INFO o.a.j.JMeter: IP: 127.0.0.1 Name: MacBook-Air-Vitalij.local FullName: localhost
-2023-07-24 16:26:46,517 INFO o.a.j.JMeter: Loaded icon properties from org/apache/jmeter/images/icon.properties
-2023-07-24 16:26:47,079 INFO o.a.j.JMeterGuiLauncher: Setting LAF to: com.github.weisj.darklaf.DarkLaf:com.github.weisj.darklaf.theme.DarculaTheme
-2023-07-24 16:26:49,000 INFO o.j.r.JARSourceHTTP: Requesting https://jmeter-plugins.org/repo/?installID=mac_os_x-c49b3ca9e5225be365b7839a2c5bedd1-gui
-2023-07-24 16:26:50,785 INFO o.j.r.PluginManager: Plugins Status: [jpgc-plugins-manager=1.7, jmeter-core=5.5, jmeter-ftp=5.5, jmeter-http=5.5, jmeter-jdbc=5.5, jmeter-jms=5.5, jmeter-junit=5.5, jmeter-java=5.5, jmeter-ldap=5.5, jmeter-mail=5.5, jmeter-mongodb=5.5, jmeter-native=5.5, jmeter-tcp=5.5, jmeter-components=5.5]
-2023-07-24 16:26:50,786 INFO o.j.r.PluginManagerMenuItem: Plugins Manager has upgrades: [jpgc-plugins-manager]
-2023-07-24 16:26:56,740 INFO o.a.j.s.FileServer: Default base='/Users/boyar/Desktop/LocationSystem'
-2023-07-24 16:26:56,743 INFO o.a.j.g.a.Load: Loading file: /Users/boyar/Desktop/LocationSystem/Location System Tests.jmx
-2023-07-24 16:26:56,743 INFO o.a.j.s.FileServer: Set new base='/Users/boyar/Desktop/LocationSystem'
-2023-07-24 16:26:56,854 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
-2023-07-24 16:26:56,858 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
-2023-07-24 16:26:56,858 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
-2023-07-24 16:26:56,859 INFO o.a.j.s.SaveService: Loading file: /Users/boyar/Desktop/LocationSystem/Location System Tests.jmx
-2023-07-24 16:26:56,927 INFO o.a.j.p.h.c.CookieManager: Settings: Delete null: true Check: true Allow variable: true Save: false Prefix: COOKIE_
-2023-07-24 16:26:56,928 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
-2023-07-24 16:26:56,928 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
-2023-07-24 16:26:56,929 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
-2023-07-24 16:26:56,929 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
-2023-07-24 16:26:56,929 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
-2023-07-24 16:26:56,929 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
-2023-07-24 16:26:57,096 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
-2023-07-24 16:26:57,096 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to ISO-8859-1
-2023-07-24 16:26:57,096 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
-2023-07-24 16:26:57,096 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
-2023-07-24 16:26:57,165 INFO o.a.j.v.ViewResultsFullVisualizer: Add JavaFX to your Java installation if you want to use renderer: org.apache.jmeter.visualizers.RenderInBrowser
-2023-07-24 16:26:57,197 INFO o.a.j.s.FileServer: Set new base='/Users/boyar/Desktop/LocationSystem'
-2023-07-24 16:27:00,175 INFO o.a.j.e.StandardJMeterEngine: Running the test!
-2023-07-24 16:27:00,176 INFO o.a.j.s.SampleEvent: List of sample_variables: []
-2023-07-24 16:27:00,176 INFO o.a.j.s.SampleEvent: List of sample_variables: []
-2023-07-24 16:27:00,177 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
-2023-07-24 16:27:00,177 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
-2023-07-24 16:27:00,201 INFO o.a.j.g.u.JMeterMenuBar: setRunning(true, *local*)
-2023-07-24 16:27:00,228 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Thread Group
-2023-07-24 16:27:00,228 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group Thread Group.
-2023-07-24 16:27:00,228 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
-2023-07-24 16:27:00,228 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=1 delayedStart=false
-2023-07-24 16:27:00,230 INFO o.a.j.t.ThreadGroup: Started thread group number 1
-2023-07-24 16:27:00,231 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
-2023-07-24 16:27:00,231 INFO o.a.j.t.JMeterThread: Thread started: Thread Group 1-1
-2023-07-24 16:27:00,235 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = MacBook-Air-Vitalij.local
-2023-07-24 16:27:00,239 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 0
-2023-07-24 16:27:00,529 INFO o.a.j.t.JMeterThread: Thread is done: Thread Group 1-1
-2023-07-24 16:27:00,529 INFO o.a.j.t.JMeterThread: Thread finished: Thread Group 1-1
-2023-07-24 16:27:00,530 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
-2023-07-24 16:27:00,530 INFO o.a.j.g.u.JMeterMenuBar: setRunning(false, *local*)
-2023-07-24 16:27:26,496 INFO o.a.j.e.StandardJMeterEngine: Running the test!
-2023-07-24 16:27:26,497 INFO o.a.j.s.SampleEvent: List of sample_variables: []
-2023-07-24 16:27:26,498 INFO o.a.j.g.u.JMeterMenuBar: setRunning(true, *local*)
-2023-07-24 16:27:26,526 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Thread Group
-2023-07-24 16:27:26,526 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group Thread Group.
-2023-07-24 16:27:26,526 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
-2023-07-24 16:27:26,526 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=1 delayedStart=false
-2023-07-24 16:27:26,527 INFO o.a.j.t.ThreadGroup: Started thread group number 1
-2023-07-24 16:27:26,527 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
-2023-07-24 16:27:26,527 INFO o.a.j.t.JMeterThread: Thread started: Thread Group 1-1
-2023-07-24 16:27:26,654 INFO o.a.j.t.JMeterThread: Thread is done: Thread Group 1-1
-2023-07-24 16:27:26,654 INFO o.a.j.t.JMeterThread: Thread finished: Thread Group 1-1
-2023-07-24 16:27:26,655 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
-2023-07-24 16:27:26,655 INFO o.a.j.g.u.JMeterMenuBar: setRunning(false, *local*)
+2023-07-25 10:02:26,203 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2023-07-25 10:02:26,218 INFO o.a.j.JMeter: Loading user properties from: /opt/homebrew/Cellar/jmeter/5.5/libexec/bin/user.properties
+2023-07-25 10:02:26,218 INFO o.a.j.JMeter: Loading system properties from: /opt/homebrew/Cellar/jmeter/5.5/libexec/bin/system.properties
+2023-07-25 10:02:26,221 INFO o.a.j.JMeter: Copyright (c) 1998-2022 The Apache Software Foundation
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: Version 5.5
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: java.version=17.0.7
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: os.name=Mac OS X
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: os.arch=aarch64
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: os.version=13.4.1
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: file.encoding=UTF-8
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: java.awt.headless=null
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: Max memory     =1073741824
+2023-07-25 10:02:26,222 INFO o.a.j.JMeter: Available Processors =8
+2023-07-25 10:02:26,228 INFO o.a.j.JMeter: Default Locale=English (EN)
+2023-07-25 10:02:26,228 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2023-07-25 10:02:26,228 INFO o.a.j.JMeter: JMeterHome=/opt/homebrew/Cellar/jmeter/5.5/libexec
+2023-07-25 10:02:26,228 INFO o.a.j.JMeter: user.dir  =/Users/boyar/Desktop/LocationSystem
+2023-07-25 10:02:26,228 INFO o.a.j.JMeter: PWD       =/Users/boyar/Desktop/LocationSystem
+2023-07-25 10:02:26,229 INFO o.a.j.JMeter: IP: 127.0.0.1 Name: MacBook-Air-Vitalij.local FullName: localhost
+2023-07-25 10:02:26,235 INFO o.a.j.JMeter: Loaded icon properties from org/apache/jmeter/images/icon.properties
+2023-07-25 10:02:26,581 INFO o.a.j.JMeterGuiLauncher: Setting LAF to: com.github.weisj.darklaf.DarkLaf:com.github.weisj.darklaf.theme.DarculaTheme
+2023-07-25 10:02:27,745 INFO o.j.r.JARSourceHTTP: Requesting https://jmeter-plugins.org/repo/?installID=mac_os_x-f34f652c9ba8eb342c12c37e09d8af2f-gui
+2023-07-25 10:02:30,278 INFO o.j.r.PluginManager: Plugins Status: [jpgc-plugins-manager=1.7, jmeter-core=5.5, jmeter-ftp=5.5, jmeter-http=5.5, jmeter-jdbc=5.5, jmeter-jms=5.5, jmeter-junit=5.5, jmeter-java=5.5, jmeter-ldap=5.5, jmeter-mail=5.5, jmeter-mongodb=5.5, jmeter-native=5.5, jmeter-tcp=5.5, jmeter-components=5.5]
+2023-07-25 10:02:30,279 INFO o.j.r.PluginManagerMenuItem: Plugins Manager has upgrades: [jpgc-plugins-manager]
+2023-07-25 10:02:34,457 INFO o.a.j.s.FileServer: Default base='/Users/boyar/Desktop/LocationSystem'
+2023-07-25 10:02:34,459 INFO o.a.j.g.a.Load: Loading file: /Users/boyar/Desktop/LocationSystem/Location System Tests.jmx
+2023-07-25 10:02:34,460 INFO o.a.j.s.FileServer: Set new base='/Users/boyar/Desktop/LocationSystem'
+2023-07-25 10:02:34,570 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2023-07-25 10:02:34,574 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2023-07-25 10:02:34,574 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2023-07-25 10:02:34,575 INFO o.a.j.s.SaveService: Loading file: /Users/boyar/Desktop/LocationSystem/Location System Tests.jmx
+2023-07-25 10:02:34,642 INFO o.a.j.p.h.c.CookieManager: Settings: Delete null: true Check: true Allow variable: true Save: false Prefix: COOKIE_
+2023-07-25 10:02:34,644 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2023-07-25 10:02:34,644 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2023-07-25 10:02:34,644 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2023-07-25 10:02:34,644 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2023-07-25 10:02:34,644 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2023-07-25 10:02:34,644 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2023-07-25 10:02:34,807 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
+2023-07-25 10:02:34,807 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to ISO-8859-1
+2023-07-25 10:02:34,807 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
+2023-07-25 10:02:34,807 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
+2023-07-25 10:02:34,874 INFO o.a.j.v.ViewResultsFullVisualizer: Add JavaFX to your Java installation if you want to use renderer: org.apache.jmeter.visualizers.RenderInBrowser
+2023-07-25 10:02:34,906 INFO o.a.j.s.FileServer: Set new base='/Users/boyar/Desktop/LocationSystem'
+2023-07-25 10:02:37,131 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2023-07-25 10:02:37,132 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2023-07-25 10:02:37,132 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2023-07-25 10:02:37,132 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
+2023-07-25 10:02:37,132 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
+2023-07-25 10:02:37,163 INFO o.a.j.g.u.JMeterMenuBar: setRunning(true, *local*)
+2023-07-25 10:02:37,192 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Thread Group
+2023-07-25 10:02:37,192 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group Thread Group.
+2023-07-25 10:02:37,192 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2023-07-25 10:02:37,192 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=1 delayedStart=false
+2023-07-25 10:02:37,196 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2023-07-25 10:02:37,196 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2023-07-25 10:02:37,197 INFO o.a.j.t.JMeterThread: Thread started: Thread Group 1-1
+2023-07-25 10:02:37,200 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = MacBook-Air-Vitalij.local
+2023-07-25 10:02:37,203 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 0
+2023-07-25 10:02:37,533 INFO o.a.j.t.JMeterThread: Thread is done: Thread Group 1-1
+2023-07-25 10:02:37,533 INFO o.a.j.t.JMeterThread: Thread finished: Thread Group 1-1
+2023-07-25 10:02:37,533 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2023-07-25 10:02:37,533 INFO o.a.j.g.u.JMeterMenuBar: setRunning(false, *local*)
+2023-07-25 10:03:46,494 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2023-07-25 10:03:46,495 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2023-07-25 10:03:46,496 INFO o.a.j.g.u.JMeterMenuBar: setRunning(true, *local*)
+2023-07-25 10:03:46,530 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Thread Group
+2023-07-25 10:03:46,530 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group Thread Group.
+2023-07-25 10:03:46,530 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2023-07-25 10:03:46,530 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=1 delayedStart=false
+2023-07-25 10:03:46,531 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2023-07-25 10:03:46,531 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2023-07-25 10:03:46,532 INFO o.a.j.t.JMeterThread: Thread started: Thread Group 1-1
+2023-07-25 10:03:46,634 INFO o.a.j.t.JMeterThread: Thread is done: Thread Group 1-1
+2023-07-25 10:03:46,634 INFO o.a.j.t.JMeterThread: Thread finished: Thread Group 1-1
+2023-07-25 10:03:46,635 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2023-07-25 10:03:46,635 INFO o.a.j.g.u.JMeterMenuBar: setRunning(false, *local*)
+2023-07-25 10:05:31,337 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2023-07-25 10:05:31,338 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2023-07-25 10:05:31,340 INFO o.a.j.g.u.JMeterMenuBar: setRunning(true, *local*)
+2023-07-25 10:05:31,383 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Thread Group
+2023-07-25 10:05:31,383 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group Thread Group.
+2023-07-25 10:05:31,383 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2023-07-25 10:05:31,383 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=1 delayedStart=false
+2023-07-25 10:05:31,386 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2023-07-25 10:05:31,386 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2023-07-25 10:05:31,387 INFO o.a.j.t.JMeterThread: Thread started: Thread Group 1-1
+2023-07-25 10:05:31,525 INFO o.a.j.t.JMeterThread: Thread is done: Thread Group 1-1
+2023-07-25 10:05:31,525 INFO o.a.j.t.JMeterThread: Thread finished: Thread Group 1-1
+2023-07-25 10:05:31,525 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2023-07-25 10:05:31,525 INFO o.a.j.g.u.JMeterMenuBar: setRunning(false, *local*)
+2023-07-25 10:07:22,766 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2023-07-25 10:07:22,770 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2023-07-25 10:07:22,774 INFO o.a.j.g.u.JMeterMenuBar: setRunning(true, *local*)
+2023-07-25 10:07:22,822 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Thread Group
+2023-07-25 10:07:22,822 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group Thread Group.
+2023-07-25 10:07:22,822 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2023-07-25 10:07:22,822 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=1 delayedStart=false
+2023-07-25 10:07:22,824 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2023-07-25 10:07:22,824 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2023-07-25 10:07:22,825 INFO o.a.j.t.JMeterThread: Thread started: Thread Group 1-1
+2023-07-25 10:07:23,064 INFO o.a.j.t.JMeterThread: Thread is done: Thread Group 1-1
+2023-07-25 10:07:23,065 INFO o.a.j.t.JMeterThread: Thread finished: Thread Group 1-1
+2023-07-25 10:07:23,065 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2023-07-25 10:07:23,065 INFO o.a.j.g.u.JMeterMenuBar: setRunning(false, *local*)
