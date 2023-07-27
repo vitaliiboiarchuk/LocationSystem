@@ -27,7 +27,7 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 public class UserController {
 
     UserService userService;
-    EmailUtil emailUtils;
+    EmailUtil emailUtil;
 
     @PostMapping("/registration")
     public CompletableFuture<ResponseEntity<User>> registerPost(@Valid @RequestBody User user) {
@@ -36,7 +36,7 @@ public class UserController {
             .thenCompose(existingUser -> {
                 if (existingUser.isPresent()) {
                     log.warn("Registration failed. User with email={} already exists",
-                        emailUtils.hideEmail(user.getUsername()));
+                        emailUtil.hideEmail(user.getUsername()));
                     throw new AlreadyExistsException("User already exists");
                 }
                 return userService.saveUser(user)

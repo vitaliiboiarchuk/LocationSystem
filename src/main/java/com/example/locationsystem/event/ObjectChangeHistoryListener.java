@@ -17,12 +17,12 @@ public class ObjectChangeHistoryListener implements ApplicationListener<ObjectCh
     @Override
     public void onApplicationEvent(ObjectChangeEvent event) {
 
-        String objectType = event.getObjectType();
+        ObjectChangeEvent.ObjectType objectType = event.getObjectType();
         ObjectChangeEvent.ActionType actionType = event.getActionType();
         Object data = event.getData();
 
         String sql = "INSERT INTO history (object_type, action_type, details) VALUES (?, ?, ?)";
-        jdbcTemplate.update(sql, objectType, actionType.name(), data.toString());
+        jdbcTemplate.update(sql, objectType.name(), actionType.name(), data.toString());
     }
 }
 

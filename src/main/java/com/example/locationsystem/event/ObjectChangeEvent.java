@@ -14,11 +14,17 @@ public class ObjectChangeEvent extends ApplicationEvent {
         DELETED
     }
 
-    String objectType;
+    public enum ObjectType {
+        USER,
+        LOCATION,
+        USER_ACCESS
+    }
+
+    ObjectType objectType;
     ActionType actionType;
     Object data;
 
-    public ObjectChangeEvent(Object source, String objectType, ActionType actionType, Object data) {
+    public ObjectChangeEvent(Object source, ObjectType objectType, ActionType actionType, Object data) {
 
         super(source);
         this.objectType = objectType;

@@ -11,7 +11,10 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
@@ -72,21 +75,24 @@ public class UserDao {
             String hashedPassword = jdbcTemplate.queryForObject("SELECT SHA2(?, 256)", String.class,
                 user.getPassword());
 
-            KeyHolder keyHolder = new GeneratedKeyHolder();
+            try (Connection connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection()) {
 
-            jdbcTemplate.update(connection -> {
                 PreparedStatement ps = connection.prepareStatement(SAVE_USER, Statement.RETURN_GENERATED_KEYS);
                 ps.setString(1, user.getName());
                 ps.setString(2, hashedPassword);
                 ps.setString(3, user.getUsername());
-                return ps;
-            }, keyHolder);
+                ps.executeUpdate();
 
-            Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+                ResultSet rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    user.setId(rs.getLong(1));
+                }
+                log.info("User with email={} saved", emailUtil.hideEmail(user.getUsername()));
+                return user;
 
-            user.setId(generatedId);
-            log.info("User with email={} saved", emailUtil.hideEmail(user.getUsername()));
-            return user;
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to save user", e);
+            }
         });
     }
 

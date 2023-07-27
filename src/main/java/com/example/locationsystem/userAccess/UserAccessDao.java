@@ -10,7 +10,10 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -34,18 +37,25 @@ public class UserAccessDao {
     public CompletableFuture<UserAccess> saveUserAccess(UserAccess userAccess) {
 
         return CompletableFuture.supplyAsync(() -> {
-            KeyHolder keyHolder = new GeneratedKeyHolder();
-            jdbcTemplate.update(connection -> {
+
+            try (Connection connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection()) {
+
                 PreparedStatement ps = connection.prepareStatement(SAVE_USER_ACCESS, Statement.RETURN_GENERATED_KEYS);
                 ps.setString(1, userAccess.getTitle());
                 ps.setLong(2, userAccess.getLocationId());
                 ps.setLong(3, userAccess.getUserId());
-                return ps;
-            }, keyHolder);
-            Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
-            userAccess.setId(generatedId);
-            log.info("User access={} saved", userAccess);
-            return userAccess;
+                ps.executeUpdate();
+
+                ResultSet rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    userAccess.setId(rs.getLong(1));
+                }
+                log.info("User access={} saved", userAccess);
+                return userAccess;
+
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to save user access", e);
+            }
         });
     }
 

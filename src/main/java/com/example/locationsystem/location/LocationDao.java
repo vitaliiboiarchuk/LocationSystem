@@ -10,7 +10,10 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
@@ -88,20 +91,24 @@ public class LocationDao {
 
         return CompletableFuture.supplyAsync(() -> {
 
-            KeyHolder keyHolder = new GeneratedKeyHolder();
-            jdbcTemplate.update(connection -> {
+            try (Connection connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection()) {
+
                 PreparedStatement ps = connection.prepareStatement(SAVE_LOCATION, Statement.RETURN_GENERATED_KEYS);
                 ps.setString(1, location.getName());
                 ps.setString(2, location.getAddress());
                 ps.setLong(3, location.getUserId());
-                return ps;
-            }, keyHolder);
+                ps.executeUpdate();
 
-            Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
-            location.setId(generatedId);
+                ResultSet rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    location.setId(rs.getLong(1));
+                }
+                log.info("Location saved={}", location);
+                return location;
 
-            log.info("Location saved={}", location);
-            return location;
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to save location", e);
+            }
         });
     }
 

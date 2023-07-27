@@ -19,7 +19,7 @@ class EventServiceTest extends Specification {
     void setup() {
 
         eventPublisherMock = Mock(ApplicationEventPublisher)
-        eventService = new EventServiceImpl(eventPublisherMock)
+        eventService = new EventService(eventPublisherMock)
     }
 
     def "publishUserCreatedEvent should publish CREATED event for User"() {
@@ -32,7 +32,7 @@ class EventServiceTest extends Specification {
 
         and:
             publishedEvent.source == eventService
-            publishedEvent.objectType == EventServiceImpl.USER
+            publishedEvent.objectType == ObjectChangeEvent.ObjectType.USER
             publishedEvent.actionType == ObjectChangeEvent.ActionType.CREATED
             publishedEvent.data == user
     }
@@ -47,7 +47,7 @@ class EventServiceTest extends Specification {
 
         and:
             publishedEvent.source == eventService
-            publishedEvent.objectType == EventServiceImpl.USER
+            publishedEvent.objectType == ObjectChangeEvent.ObjectType.USER
             publishedEvent.actionType == ObjectChangeEvent.ActionType.DELETED
             publishedEvent.data == user
     }
@@ -62,7 +62,7 @@ class EventServiceTest extends Specification {
 
         and:
             publishedEvent.source == eventService
-            publishedEvent.objectType == EventServiceImpl.LOCATION
+            publishedEvent.objectType == ObjectChangeEvent.ObjectType.LOCATION
             publishedEvent.actionType == ObjectChangeEvent.ActionType.CREATED
             publishedEvent.data == location
     }
@@ -77,7 +77,7 @@ class EventServiceTest extends Specification {
 
         and:
             publishedEvent.source == eventService
-            publishedEvent.objectType == EventServiceImpl.LOCATION
+            publishedEvent.objectType == ObjectChangeEvent.ObjectType.LOCATION
             publishedEvent.actionType == ObjectChangeEvent.ActionType.DELETED
             publishedEvent.data == location
     }
@@ -92,7 +92,7 @@ class EventServiceTest extends Specification {
 
         and:
             publishedEvent.source == eventService
-            publishedEvent.objectType == EventServiceImpl.USER_ACCESS
+            publishedEvent.objectType == ObjectChangeEvent.ObjectType.USER_ACCESS
             publishedEvent.actionType == ObjectChangeEvent.ActionType.CREATED
             publishedEvent.data == userAccess
     }
