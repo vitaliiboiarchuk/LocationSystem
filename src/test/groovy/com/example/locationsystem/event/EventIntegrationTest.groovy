@@ -59,8 +59,7 @@ class EventIntegrationTest extends Specification {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) }).join()
+            def savedUser = userService.saveUser(user).join()
 
         when:
             userService.deleteUserByEmail(savedUser.getUsername()).join()

@@ -84,14 +84,10 @@ public class LocationController {
     public CompletableFuture<ResponseEntity<UserAccess>> changeAccess(
         Long userId, @RequestBody UserAccess userAccess
     ) {
-
-        return userAccessService.findUserAccess(userAccess, userId)
-            .thenCompose(access -> userAccessService.changeUserAccess(userAccess)
-                .thenCompose(result ->
-                    userAccessService.findUserAccess(userAccess, userId)
-                        .thenApply(ResponseEntity::ok)
-                ));
+        return userAccessService.changeUserAccess(userAccess, userId)
+            .thenApply(ResponseEntity::ok);
     }
+
 
     @GetAndValidUserId
     @DeleteMapping("/delete/{name}/")

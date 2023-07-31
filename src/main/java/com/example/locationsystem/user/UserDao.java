@@ -86,6 +86,7 @@ public class UserDao {
                     user.setId(rs.getLong(1));
                 }
                 log.info("User with email={} saved", emailUtil.hideEmail(user.getUsername()));
+                user.setPassword(Objects.requireNonNull(hashedPassword));
                 return user;
 
             } catch (SQLException e) {

@@ -59,15 +59,15 @@ class UserAccessServiceTest extends Specification {
     def "should change user access"() {
 
         given:
-            userAccessDao.changeUserAccess(userAccess) >> CompletableFuture.completedFuture(null)
+            userAccessDao.changeUserAccess(userAccess, 1) >> CompletableFuture.completedFuture(userAccess)
 
         when:
-            def result = userAccessService.changeUserAccess(userAccess)
+            def result = userAccessService.changeUserAccess(userAccess, 1)
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
-
-            1 * userAccessDao.changeUserAccess(userAccess)
+            UserAccess access = result.get()
+            access.getTitle() == 'ADMIN'
+            access.getUserId() == 1L
+            access.getLocationId() == 2L
     }
 }

@@ -62,7 +62,6 @@ class LocationControllerIntegrationTest extends Specification {
     private static final String DELETE_USER_BY_EMAIL = "DELETE FROM users WHERE username = 'test@gmail.com';"
     private static final String DELETE_USER_BY_EMAIL_2 = "DELETE FROM users WHERE username = 'test2@gmail.com';"
     private static final String DELETE_EVENT = "DELETE FROM history WHERE object_id = ?;"
-    private static final String DELETE_EVENT_USER_ACCESS = "DELETE FROM history WHERE details = ?;"
 
     def "should add location successfully"() {
 
@@ -247,10 +246,6 @@ class LocationControllerIntegrationTest extends Specification {
         then:
             UserAccess addedUserAccessService = userAccessService.findUserAccess(userAccess, savedUser.getId()).join()
             userAccess.getTitle() == addedUserAccessService.getTitle()
-            println addedUserAccessService.getLocationId()
-            println addedUserAccessService.getId()
-            println addedUserAccessService.getUserId()
-//???????
 
         and:
             UserAccess addedUserAccessDao = userAccessDao.findUserAccess(userAccess, savedUser.getId()).join()

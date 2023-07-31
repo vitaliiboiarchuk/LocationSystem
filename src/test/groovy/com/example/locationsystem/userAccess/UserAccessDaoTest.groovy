@@ -73,6 +73,7 @@ class UserAccessDaoTest extends Specification {
             UserAccess userAccess = result.get()
             userAccess.getTitle() == 'ADMIN'
             userAccess.getLocationId() == 100
+            userAccess.getUserId() == 100
     }
 
     def "should change user access"() {
@@ -81,11 +82,12 @@ class UserAccessDaoTest extends Specification {
             def access = new UserAccess("ADMIN", 100, 100)
 
         when:
-            CompletableFuture<Void> result = userAccessDao.changeUserAccess(access)
+            def result = userAccessDao.changeUserAccess(access, 200)
 
         then:
-            result.get() == null
-            String newTitle = jdbcTemplate.queryForObject("SELECT title FROM accesses WHERE location_id = ? AND user_id = ?", String.class, 100L, 100L)
-            newTitle == "READ"
+            UserAccess userAccess = result.get()
+            userAccess.getUserId() == 100
+            userAccess.getLocationId() == 100
+            userAccess.getTitle() == "READ"
     }
 }

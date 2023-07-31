@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 import com.example.locationsystem.exception.ControllerExceptions.*;
 
@@ -27,8 +28,8 @@ public class UserAccessDao {
     JdbcTemplate jdbcTemplate;
 
     private static final String SAVE_USER_ACCESS = "INSERT INTO accesses(title,location_id,user_id) VALUES(?,?,?)";
-    private static final String FIND_USER_ACCESS = "SELECT * FROM accesses a JOIN locations l ON a.location_id = l.id" +
-        " WHERE a.location_id = ? AND a.user_id = ? AND l.user_id = ?";
+    private static final String FIND_USER_ACCESS = "SELECT a.* FROM accesses a INNER JOIN locations l ON a" +
+        ".location_id = l.id WHERE a.location_id = ? AND a.user_id = ? AND l.user_id = ?;";
     private static final String CHANGE_USER_ACCESS = "UPDATE accesses SET title = CASE WHEN title = 'ADMIN' THEN " +
         "'READ' WHEN title = 'READ' THEN 'ADMIN' ELSE title END WHERE location_id = ? AND user_id = ?";
 
@@ -50,7 +51,6 @@ public class UserAccessDao {
                 }
                 log.info("User access={} saved", userAccess);
                 return userAccess;
-
             } catch (SQLException e) {
                 throw new RuntimeException("Failed to save user access", e);
             }
@@ -60,27 +60,27 @@ public class UserAccessDao {
     public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess, Long ownerId) {
 
         return CompletableFuture.supplyAsync(() ->
-            jdbcTemplate.query(FIND_USER_ACCESS,
-                    BeanPropertyRowMapper.newInstance(UserAccess.class), userAccess.getLocationId(),
-                    userAccess.getUserId(), ownerId)
+            jdbcTemplate.query(FIND_USER_ACCESS, BeanPropertyRowMapper.newInstance(UserAccess.class),
+                    userAccess.getLocationId(), userAccess.getUserId(), ownerId)
                 .stream()
-                .peek(access -> log.info("User access found by location id={}, user id={}, owner id={}",
-                    userAccess.getLocationId(), userAccess.getUserId(), ownerId))
                 .findFirst()
                 .orElseThrow(() -> {
-                        log.warn("User access not found by location id={}, user id={}, owner id={}",
-                            userAccess.getLocationId(), userAccess.getUserId(), ownerId);
-                        throw new UserAccessNotFoundException("User access not found");
-                    }
-                ));
+                    log.warn("User access not found by location id={}, user id={}, owner id={}",
+                        userAccess.getLocationId(), userAccess.getUserId(), ownerId);
+                    throw new UserAccessNotFoundException("User access not found");
+                }));
     }
 
-    public CompletableFuture<Void> changeUserAccess(UserAccess userAccess) {
+    public CompletableFuture<UserAccess> changeUserAccess(UserAccess userAccess, Long ownerId) {
 
-        return CompletableFuture.runAsync(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             jdbcTemplate.update(CHANGE_USER_ACCESS, userAccess.getLocationId(), userAccess.getUserId());
-            log.info("User access changed by location id={}, user id={}",
-                userAccess.getLocationId(), userAccess.getUserId());
-        });
+
+            return findUserAccess(userAccess, ownerId).thenApply(updatedAccess -> {
+                log.info("User access changed by location id={}, user id={}",
+                    userAccess.getLocationId(), userAccess.getUserId());
+                return updatedAccess;
+            });
+        }).thenCompose(Function.identity());
     }
 }
