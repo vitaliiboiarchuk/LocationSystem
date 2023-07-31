@@ -84,8 +84,7 @@ class EventIntegrationTest extends Specification {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) }).join()
+            def savedUser = userService.saveUser(user).join()
 
             def location = new Location(name: "test", address: "test", userId: savedUser.getId())
 
@@ -114,12 +113,10 @@ class EventIntegrationTest extends Specification {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) }).join()
+            def savedUser = userService.saveUser(user).join()
 
             def location = new Location(name: "test", address: "test", userId: savedUser.getId())
-            def savedLoc = locationService.saveLocation(location, location.getUserId())
-                .thenCompose({ result -> locationService.findLocationById(location.getId()) }).join()
+            def savedLoc = locationService.saveLocation(location, location.getUserId()).join()
 
         when:
             locationService.deleteLocation(savedLoc.getName(), savedLoc.getUserId()).join()
@@ -145,12 +142,10 @@ class EventIntegrationTest extends Specification {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) }).join()
+            def savedUser = userService.saveUser(user).join()
 
             def location = new Location(name: "test", address: "test", userId: savedUser.getId())
-            def savedLoc = locationService.saveLocation(location, location.getUserId())
-                .thenCompose({ result -> locationService.findLocationById(location.getId()) }).join()
+            def savedLoc = locationService.saveLocation(location, location.getUserId()).join()
 
             def userAccess = new UserAccess(title: "test", userId: savedUser.getId(), locationId: savedLoc.getId())
 

@@ -45,7 +45,8 @@ public class UserServiceImpl implements UserService {
             .thenCompose(userOptional -> {
                 if (userOptional.isPresent()) {
                     return userDao.deleteUserByEmail(email)
-                        .thenAccept(result -> eventPublisher.publishEvent(new ObjectChangeEvent(this,
+                        .thenAccept(result ->
+                            eventPublisher.publishEvent(new ObjectChangeEvent(this,
                             ObjectChangeEvent.ObjectType.USER, ObjectChangeEvent.ActionType.DELETED,
                             userOptional.get(), userOptional.get().getId())));
                 } else {
