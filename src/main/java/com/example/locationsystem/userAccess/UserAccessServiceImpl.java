@@ -34,12 +34,6 @@ public class UserAccessServiceImpl implements UserAccessService {
     }
 
     @Override
-    public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess, Long ownerId) {
-
-        return userAccessDao.findUserAccess(userAccess, ownerId);
-    }
-
-    @Override
     public CompletableFuture<UserAccess> changeUserAccess(UserAccess userAccess, Long ownerId) {
 
         log.info("Changing user access by location id={}, user id={}",

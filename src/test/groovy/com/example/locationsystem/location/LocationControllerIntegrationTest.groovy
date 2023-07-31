@@ -244,10 +244,6 @@ class LocationControllerIntegrationTest extends Specification {
                     jsonResponse['userId'] == userAccess.getUserId()
                 }
         then:
-            UserAccess addedUserAccessService = userAccessService.findUserAccess(userAccess, savedUser.getId()).join()
-            userAccess.getTitle() == addedUserAccessService.getTitle()
-
-        and:
             UserAccess addedUserAccessDao = userAccessDao.findUserAccess(userAccess, savedUser.getId()).join()
             userAccess.getTitle() == addedUserAccessDao.getTitle()
 
@@ -255,7 +251,7 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
-            jdbcTemplate.update(DELETE_EVENT, addedUserAccessService.getId())
+            jdbcTemplate.update(DELETE_EVENT, addedUserAccessDao.getId())
             jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
             jdbcTemplate.update(DELETE_EVENT, savedUser2.getId())
             jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
@@ -410,10 +406,6 @@ class LocationControllerIntegrationTest extends Specification {
                     jsonResponse['userId'] == userAccess.getUserId()
                 }
         then:
-            UserAccess changedAccessService = userAccessService.findUserAccess(userAccess, savedOwner.getId()).join()
-            changedAccessService.getTitle() == "READ"
-
-        and:
             UserAccess changedAccessDao = userAccessDao.findUserAccess(userAccess, savedOwner.getId()).join()
             changedAccessDao.getTitle() == "READ"
 

@@ -41,21 +41,6 @@ class UserAccessServiceTest extends Specification {
             1 * eventPublisher.publishEvent(_) >> null
     }
 
-    def "should find user access"() {
-
-        given:
-            userAccessDao.findUserAccess(userAccess, 2) >> CompletableFuture.completedFuture(userAccess)
-
-        when:
-            def result = userAccessService.findUserAccess(userAccess, 2)
-
-        then:
-            UserAccess access = result.get()
-            access.getTitle() == 'ADMIN'
-            access.getUserId() == 1
-            access.getLocationId() == 2
-    }
-
     def "should change user access"() {
 
         given:
