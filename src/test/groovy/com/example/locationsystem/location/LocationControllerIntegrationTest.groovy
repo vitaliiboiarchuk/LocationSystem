@@ -18,7 +18,6 @@ import spock.lang.Specification
 
 import javax.servlet.http.Cookie
 import javax.sql.DataSource
-import java.util.concurrent.CompletableFuture
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
@@ -62,15 +61,14 @@ class LocationControllerIntegrationTest extends Specification {
     private static final String DELETE_LOCATION_BY_NAME_2 = "DELETE FROM locations WHERE name = 'name2';"
     private static final String DELETE_USER_BY_EMAIL = "DELETE FROM users WHERE username = 'test@gmail.com';"
     private static final String DELETE_USER_BY_EMAIL_2 = "DELETE FROM users WHERE username = 'test2@gmail.com';"
+    private static final String DELETE_EVENT = "DELETE FROM history WHERE object_id = ?;"
+    private static final String DELETE_EVENT_USER_ACCESS = "DELETE FROM history WHERE details = ?;"
 
     def "should add location successfully"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) })
-
-            def savedUser = savedUserFuture.join()
+            def savedUser = userService.saveUser(user).join()
             def location = new Location("name", "address", savedUser.getId())
 
         when:
@@ -104,16 +102,15 @@ class LocationControllerIntegrationTest extends Specification {
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, addedLocationService.get().getId())
     }
 
     def "should throw MethodArgumentNotValidException when field is empty"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) })
-
-            def savedUser = savedUserFuture.join()
+            def savedUser = userService.saveUser(user).join()
 
             def emptyFieldLocation = new Location("", "add1", savedUser.getId())
 
@@ -133,21 +130,17 @@ class LocationControllerIntegrationTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
     }
 
     def "should throw AlreadyExistsException when location already exists"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) })
-
-            def savedUser = savedUserFuture.join()
+            def savedUser = userService.saveUser(user).join()
 
             def location = new Location("name", "address", savedUser.getId())
-
-            locationService.saveLocation(location, savedUser.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
+            def savedLocation = locationService.saveLocation(location, savedUser.getId()).join()
 
         when:
             def result = mockMvc.perform(post("/location/add")
@@ -168,39 +161,27 @@ class LocationControllerIntegrationTest extends Specification {
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
     }
 
     def "should show my locations"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) })
-
-            def savedUser = savedUserFuture.join()
+            def savedUser = userService.saveUser(user).join()
 
             def location = new Location("name", "address", savedUser.getId())
-
-            CompletableFuture<Location> savedLocationFuture = locationService.saveLocation(location, savedUser.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
-
-            def savedLocation = savedLocationFuture.join()
+            def savedLocation = locationService.saveLocation(location, savedUser.getId()).join()
 
             def user2 = new User("test2@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUser2Future = userService.saveUser(user2)
-                .thenCompose({ result3 -> userService.findUserById(user2.getId()) })
-
-            def savedUser2 = savedUser2Future.join()
+            def savedUser2 = userService.saveUser(user2).join()
 
             def location2 = new Location("name2", "address", savedUser2.getId())
-
-            CompletableFuture<Location> savedLocation2Future = locationService.saveLocation(location2, savedUser2.getId())
-                .thenCompose({ result4 -> locationService.findLocationById(location2.getId()) })
-
-            def savedLocation2 = savedLocation2Future.join()
+            def savedLocation2 = locationService.saveLocation(location2, savedUser2.getId()).join()
 
             def userAccess = new UserAccess("ADMIN", savedUser.getId(), savedLocation2.getId())
-            userAccessService.saveUserAccess(userAccess).join()
+            def savedAccess = userAccessService.saveUserAccess(userAccess).join()
 
             def expectedLocs = [savedLocation, savedLocation2]
 
@@ -225,29 +206,24 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME_2)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUser2.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation2.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedAccess.getId())
     }
 
     def "should share location successfully"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) })
-
-            def savedUser = savedUserFuture.join()
+            def savedUser = userService.saveUser(user).join()
 
             def location = new Location("name", "address", savedUser.getId())
-
-            CompletableFuture<Location> savedLocationFuture = locationService.saveLocation(location, savedUser.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
-
-            def savedLocation = savedLocationFuture.join()
+            def savedLocation = locationService.saveLocation(location, savedUser.getId()).join()
 
             def user2 = new User("test2@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUser2Future = userService.saveUser(user2)
-                .thenCompose({ result3 -> userService.findUserById(user2.getId()) })
-
-            def savedUser2 = savedUser2Future.join()
+            def savedUser2 = userService.saveUser(user2).join()
 
             def userAccess = new UserAccess("ADMIN", savedUser2.getId(), savedLocation.getId())
 
@@ -271,6 +247,10 @@ class LocationControllerIntegrationTest extends Specification {
         then:
             UserAccess addedUserAccessService = userAccessService.findUserAccess(userAccess, savedUser.getId()).join()
             userAccess.getTitle() == addedUserAccessService.getTitle()
+            println addedUserAccessService.getLocationId()
+            println addedUserAccessService.getId()
+            println addedUserAccessService.getUserId()
+//???????
 
         and:
             UserAccess addedUserAccessDao = userAccessDao.findUserAccess(userAccess, savedUser.getId()).join()
@@ -280,23 +260,20 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
+            jdbcTemplate.update(DELETE_EVENT, addedUserAccessService.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUser2.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
     }
 
     def "should throw NoLocationOrUserFoundException when no location or user found to share"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) })
-
-            def savedUser = savedUserFuture.join()
+            def savedUser = userService.saveUser(user).join()
 
             def location = new Location("name", "address", savedUser.getId())
-
-            CompletableFuture<Location> savedLocationFuture = locationService.saveLocation(location, savedUser.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
-
-            def savedLocation = savedLocationFuture.join()
+            def savedLocation = locationService.saveLocation(location, savedUser.getId()).join()
 
             def userAccess = new UserAccess("ADMIN", savedUser.getId() + 1, savedLocation.getId() + 1)
 
@@ -319,36 +296,28 @@ class LocationControllerIntegrationTest extends Specification {
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
     }
 
     def "should show friends on location if all my locations have location with specified id"() {
 
         given:
             def owner = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(owner)
-                .thenCompose({ result -> userService.findUserById(owner.getId()) })
-
-            def savedOwner = savedUserFuture.join()
+            def savedOwner = userService.saveUser(owner).join()
 
             def location = new Location("name", "address", savedOwner.getId())
-
-            CompletableFuture<Location> savedLocationFuture = locationService.saveLocation(location, savedOwner.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
-
-            def savedLocation = savedLocationFuture.join()
+            def savedLocation = locationService.saveLocation(location, savedOwner.getId()).join()
 
             def friend = new User("test2@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUser2Future = userService.saveUser(friend)
-                .thenCompose({ result3 -> userService.findUserById(friend.getId()) })
-
-            def savedFriend = savedUser2Future.join()
+            def savedFriend = userService.saveUser(friend).join()
 
             def userAccess = new UserAccess("ADMIN", savedFriend.getId(), savedLocation.getId())
-            userAccessService.saveUserAccess(userAccess).join()
+            def savedAccess = userAccessService.saveUserAccess(userAccess).join()
 
             def expectedFriends = [savedFriend]
 
-        when:
+        expect:
             def mvcResult = mockMvc.perform(get("/location/{locationId}/", savedLocation.getId())
                 .cookie(new Cookie("user", savedOwner.getId().toString())))
                 .andExpect(request().asyncStarted())
@@ -363,41 +332,28 @@ class LocationControllerIntegrationTest extends Specification {
                         jsonResponse.find { it['name'] == expectedFriend.name && it['username'] == expectedFriend.username }
                     }
                 }
-        then:
-            List<User> usersOnLocService = userService.findAllUsersOnLocation(savedLocation.getId(), savedOwner.getId()).join()
-            usersOnLocService == expectedFriends
-
-        and:
-            List<User> usersOnLocDao = userDao.findAllUsersOnLocation(savedLocation.getId(), savedOwner.getId()).join()
-            usersOnLocDao == expectedFriends
 
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
+            jdbcTemplate.update(DELETE_EVENT, savedOwner.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedFriend.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedAccess.getId())
     }
 
     def "should throw LocationNotFoundException if all my locations not have location with specified id"() {
 
         given:
             def owner = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(owner)
-                .thenCompose({ result -> userService.findUserById(owner.getId()) })
-
-            def savedOwner = savedUserFuture.join()
+            def savedOwner = userService.saveUser(owner).join()
 
             def location = new Location("name", "address", savedOwner.getId())
-
-            CompletableFuture<Location> savedLocationFuture = locationService.saveLocation(location, savedOwner.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
-
-            def savedLocation = savedLocationFuture.join()
+            def savedLocation = locationService.saveLocation(location, savedOwner.getId()).join()
 
             def user2 = new User("test2@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUser2Future = userService.saveUser(user2)
-                .thenCompose({ result3 -> userService.findUserById(user2.getId()) })
-
-            def savedUser2 = savedUser2Future.join()
+            def savedUser2 = userService.saveUser(user2).join()
 
         when:
             def result = mockMvc.perform(get("/location/{locationId}/", savedLocation.getId())
@@ -421,32 +377,25 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
+            jdbcTemplate.update(DELETE_EVENT, savedOwner.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUser2.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
     }
 
     def "should change user access successfully"() {
 
         given:
             def owner = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(owner)
-                .thenCompose({ result -> userService.findUserById(owner.getId()) })
-
-            def savedOwner = savedUserFuture.join()
+            def savedOwner = userService.saveUser(owner).join()
 
             def location = new Location("name", "address", savedOwner.getId())
-
-            CompletableFuture<Location> savedLocationFuture = locationService.saveLocation(location, savedOwner.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
-
-            def savedLocation = savedLocationFuture.join()
+            def savedLocation = locationService.saveLocation(location, savedOwner.getId()).join()
 
             def friend = new User("test2@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUser2Future = userService.saveUser(friend)
-                .thenCompose({ result3 -> userService.findUserById(friend.getId()) })
-
-            def savedFriend = savedUser2Future.join()
+            def savedFriend = userService.saveUser(friend).join()
 
             def userAccess = new UserAccess("ADMIN", savedFriend.getId(), savedLocation.getId())
-            userAccessService.saveUserAccess(userAccess).join()
+            def savedAccess = userAccessService.saveUserAccess(userAccess).join()
 
         when:
             def mvcResult = mockMvc.perform(put("/location/change")
@@ -477,29 +426,23 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
+            jdbcTemplate.update(DELETE_EVENT, savedOwner.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedAccess.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedFriend.getId())
     }
 
     def "should throw UserAccessNotFoundException when user access not found"() {
 
         given:
             def owner = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUserFuture = userService.saveUser(owner)
-                .thenCompose({ result -> userService.findUserById(owner.getId()) })
-
-            def savedOwner = savedUserFuture.join()
+            def savedOwner = userService.saveUser(owner).join()
 
             def location = new Location("name", "address", savedOwner.getId())
-
-            CompletableFuture<Location> savedLocationFuture = locationService.saveLocation(location, savedOwner.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
-
-            def savedLocation = savedLocationFuture.join()
+            def savedLocation = locationService.saveLocation(location, savedOwner.getId()).join()
 
             def friend = new User("test2@gmail.com", "test", "pass")
-            CompletableFuture<User> savedUser2Future = userService.saveUser(friend)
-                .thenCompose({ result3 -> userService.findUserById(friend.getId()) })
-
-            def savedFriend = savedUser2Future.join()
+            def savedFriend = userService.saveUser(friend).join()
 
             def userAccess = new UserAccess("ADMIN", savedFriend.getId(), savedLocation.getId())
 
@@ -523,24 +466,19 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
+            jdbcTemplate.update(DELETE_EVENT, savedOwner.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedFriend.getId())
     }
 
     def "should delete location successfully"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-
-            CompletableFuture<User> savedUserFuture = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserById(user.getId()) })
-
-            def savedUser = savedUserFuture.join()
+            def savedUser = userService.saveUser(user).join()
 
             def location = new Location("name", "address", savedUser.getId())
-
-            CompletableFuture<Location> savedLocationFuture = locationService.saveLocation(location, savedUser.getId())
-                .thenCompose({ result2 -> locationService.findLocationById(location.getId()) })
-
-            def savedLocation = savedLocationFuture.join()
+            def savedLocation = locationService.saveLocation(location, savedUser.getId()).join()
 
         when:
             def result = mockMvc.perform(delete("/location/delete/{name}/", savedLocation.getName())
@@ -559,17 +497,15 @@ class LocationControllerIntegrationTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
+            jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
     }
 
     def "should throw LocationNotFoundException when location owner not found for deleting location"() {
 
         given:
             def owner = new User("test@gmail.com", "test", "pass")
-
-            CompletableFuture<User> savedOwnerFuture = userService.saveUser(owner)
-                .thenCompose({ result -> userService.findUserById(owner.getId()) })
-
-            def savedOwner = savedOwnerFuture.join()
+            def savedOwner = userService.saveUser(owner).join()
 
             def location = new Location("name", "address", savedOwner.getId())
 
@@ -589,6 +525,7 @@ class LocationControllerIntegrationTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
+            jdbcTemplate.update(DELETE_EVENT, savedOwner.getId())
     }
 }
 

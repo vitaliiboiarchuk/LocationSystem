@@ -35,5 +35,6 @@ CREATE TABLE IF NOT EXISTS history
     id          INT AUTO_INCREMENT PRIMARY KEY,
     object_type VARCHAR(50),
     action_type VARCHAR(50),
-    details     TEXT
+    details     TEXT,
+    object_id INT
 );

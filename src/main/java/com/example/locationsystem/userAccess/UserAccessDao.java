@@ -6,8 +6,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
@@ -59,19 +57,19 @@ public class UserAccessDao {
         });
     }
 
-    public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess, Long userId) {
+    public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess, Long ownerId) {
 
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_USER_ACCESS,
                     BeanPropertyRowMapper.newInstance(UserAccess.class), userAccess.getLocationId(),
-                    userAccess.getUserId(), userId)
+                    userAccess.getUserId(), ownerId)
                 .stream()
-                .peek(access -> log.info("User access found by location id={}, user to share id={}, owner id={}",
-                    userAccess.getLocationId(), userAccess.getUserId(), userId))
+                .peek(access -> log.info("User access found by location id={}, user id={}, owner id={}",
+                    userAccess.getLocationId(), userAccess.getUserId(), ownerId))
                 .findFirst()
                 .orElseThrow(() -> {
-                        log.warn("User access not found by location id={}, user to share id={}, owner id={}",
-                            userAccess.getLocationId(), userAccess.getUserId(), userId);
+                        log.warn("User access not found by location id={}, user id={}, owner id={}",
+                            userAccess.getLocationId(), userAccess.getUserId(), ownerId);
                         throw new UserAccessNotFoundException("User access not found");
                     }
                 ));

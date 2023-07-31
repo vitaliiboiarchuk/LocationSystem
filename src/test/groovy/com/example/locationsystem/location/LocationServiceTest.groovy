@@ -1,7 +1,7 @@
 package com.example.locationsystem.location
 
-import com.example.locationsystem.event.EventService
 import com.example.locationsystem.exception.ControllerExceptions
+import org.springframework.context.ApplicationEventPublisher
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -14,7 +14,7 @@ class LocationServiceTest extends Specification {
 
     LocationService locationService
 
-    EventService eventService
+    ApplicationEventPublisher eventPublisher
 
     @Shared
     def loc = new Location(name: "name1", address: "add1", userId: 1L)
@@ -23,9 +23,9 @@ class LocationServiceTest extends Specification {
     def setup() {
 
         locationDao = Mock(LocationDao)
-        eventService = Mock(EventService)
+        eventPublisher = Mock(ApplicationEventPublisher)
 
-        locationService = new LocationServiceImpl(locationDao, eventService)
+        locationService = new LocationServiceImpl(locationDao,eventPublisher)
 
         locs = new ArrayList()
         locs << loc
@@ -47,7 +47,7 @@ class LocationServiceTest extends Specification {
 
         then:
             1 * locationDao.saveLocation(locationToSave) >> CompletableFuture.completedFuture(expectedLocation)
-            1 * eventService.publishLocationCreatedEvent(expectedLocation) >> null
+            1 * eventPublisher.publishEvent(_) >> null
     }
 
     def "findLocationByNameAndUserId should return location"() {
@@ -95,7 +95,7 @@ class LocationServiceTest extends Specification {
         then:
             1 * locationDao.findLocationByNameAndUserId("name1", 1) >> CompletableFuture.completedFuture(Optional.of(loc))
             1 * locationDao.deleteLocation("name1", 1) >> CompletableFuture.completedFuture(null)
-            1 * eventService.publishLocationDeletedEvent(loc) >> null
+            1 * eventPublisher.publishEvent(_) >> null
     }
 
     def "should throw LocationNotFoundException when location not found"() {
@@ -106,7 +106,7 @@ class LocationServiceTest extends Specification {
         then:
             1 * locationDao.findLocationByNameAndUserId("name", 100) >> CompletableFuture.completedFuture(Optional.empty())
             0 * locationDao.deleteLocation("name", 100)
-            0 * eventService.publishLocationDeletedEvent(_)
+            0 * eventPublisher.publishEvent(_)
 
         and:
             try {

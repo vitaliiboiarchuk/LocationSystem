@@ -1,10 +1,11 @@
 package com.example.locationsystem.location;
 
-import com.example.locationsystem.event.EventService;
+import com.example.locationsystem.event.ObjectChangeEvent;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +21,7 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 public class LocationServiceImpl implements LocationService {
 
     LocationDao locationDao;
-    EventService eventService;
+    ApplicationEventPublisher eventPublisher;
 
     @Override
     public CompletableFuture<List<Location>> findAllUserLocations(Long userId) {
@@ -50,7 +51,9 @@ public class LocationServiceImpl implements LocationService {
         log.info("Saving location={}", location);
         return locationDao.saveLocation(location)
             .thenApply(savedLocation -> {
-                eventService.publishLocationCreatedEvent(savedLocation);
+                eventPublisher.publishEvent(new ObjectChangeEvent(this, ObjectChangeEvent.ObjectType.LOCATION,
+                    ObjectChangeEvent.ActionType.CREATED,
+                    savedLocation, savedLocation.getId()));
                 return savedLocation;
             });
     }
@@ -71,7 +74,10 @@ public class LocationServiceImpl implements LocationService {
             .thenCompose(locationOptional -> {
                 if (locationOptional.isPresent()) {
                     return locationDao.deleteLocation(name, userId)
-                        .thenAccept(result -> locationOptional.ifPresent(eventService::publishLocationDeletedEvent));
+                        .thenAccept(result ->
+                            eventPublisher.publishEvent(new ObjectChangeEvent(this,
+                                ObjectChangeEvent.ObjectType.LOCATION, ObjectChangeEvent.ActionType.DELETED,
+                                locationOptional.get(), locationOptional.get().getId())));
                 } else {
                     log.warn("Location not found by name={} and user id={}", name, userId);
                     throw new LocationNotFoundException("Location not found");

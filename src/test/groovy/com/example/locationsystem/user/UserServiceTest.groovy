@@ -1,8 +1,8 @@
 package com.example.locationsystem.user
 
-import com.example.locationsystem.event.EventService
 import com.example.locationsystem.exception.ControllerExceptions
 import com.example.locationsystem.util.EmailUtil
+import org.springframework.context.ApplicationEventPublisher
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -16,14 +16,13 @@ class UserServiceTest extends Specification {
     UserDao userDao
     UserService userService
     EmailUtil emailUtil
-    EventService eventService
-
+    ApplicationEventPublisher eventPublisher
     def setup() {
 
         userDao = Mock(UserDao)
         emailUtil = Mock(EmailUtil)
-        eventService = Mock(EventService)
-        userService = new UserServiceImpl(userDao, emailUtil, eventService)
+        eventPublisher = Mock(ApplicationEventPublisher)
+        userService = new UserServiceImpl(userDao, emailUtil, eventPublisher)
     }
 
     def "saveUser should insert user into database"() {
@@ -42,7 +41,7 @@ class UserServiceTest extends Specification {
 
         then:
             1 * userDao.saveUser(userToSave) >> CompletableFuture.completedFuture(expectedUser)
-            1 * eventService.publishUserCreatedEvent(expectedUser) >> null
+            1 * eventPublisher.publishEvent(_) >> null
     }
 
     def "findByEmail should return User"() {
@@ -93,7 +92,7 @@ class UserServiceTest extends Specification {
         then:
             1 * userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
             1 * userDao.deleteUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(null)
-            1 * eventService.publishUserDeletedEvent(user) >> null
+            1 * eventPublisher.publishEvent(_) >> null
     }
 
     def "should throw UserNotFoundException when user not found"() {
@@ -104,7 +103,7 @@ class UserServiceTest extends Specification {
         then:
             1 * userDao.findUserByEmail("test") >> CompletableFuture.completedFuture(Optional.empty())
             0 * userDao.deleteUserByEmail("test")
-            0 * eventService.publishUserDeletedEvent(_)
+            0 * eventPublisher.publishEvent(_)
 
         and:
             try {

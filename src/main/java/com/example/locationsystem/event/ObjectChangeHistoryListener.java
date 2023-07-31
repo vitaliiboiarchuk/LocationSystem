@@ -3,26 +3,23 @@ package com.example.locationsystem.event;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.context.ApplicationListener;
-import org.springframework.jdbc.core.JdbcTemplate;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Component
+@Log4j2
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class ObjectChangeHistoryListener implements ApplicationListener<ObjectChangeEvent> {
+public class ObjectChangeHistoryListener {
 
-    JdbcTemplate jdbcTemplate;
+    EventDao eventDao;
 
-    @Override
-    public void onApplicationEvent(ObjectChangeEvent event) {
+    @EventListener(ObjectChangeEvent.class)
+    public void insertEvent(ObjectChangeEvent event) {
 
-        ObjectChangeEvent.ObjectType objectType = event.getObjectType();
-        ObjectChangeEvent.ActionType actionType = event.getActionType();
-        Object data = event.getData();
-
-        String sql = "INSERT INTO history (object_type, action_type, details) VALUES (?, ?, ?)";
-        jdbcTemplate.update(sql, objectType.name(), actionType.name(), data.toString());
+        log.info("Event={} received", event);
+        eventDao.insertEvent(event.getObjectType(), event.getActionType(), event.getData(), event.getObjectId());
     }
 }
 

@@ -1,6 +1,6 @@
 package com.example.locationsystem.userAccess
 
-import com.example.locationsystem.event.EventService
+import org.springframework.context.ApplicationEventPublisher
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -13,13 +13,13 @@ class UserAccessServiceTest extends Specification {
 
     UserAccessDao userAccessDao
     UserAccessService userAccessService
-    EventService eventService
+    ApplicationEventPublisher eventPublisher
 
     def setup() {
 
         userAccessDao = Mock(UserAccessDao)
-        eventService = Mock(EventService)
-        userAccessService = new UserAccessServiceImpl(userAccessDao, eventService)
+        eventPublisher = Mock(ApplicationEventPublisher)
+        userAccessService = new UserAccessServiceImpl(userAccessDao, eventPublisher)
     }
 
     def "should insert user access into database"() {
@@ -38,7 +38,7 @@ class UserAccessServiceTest extends Specification {
 
         then:
             1 * userAccessDao.saveUserAccess(userAccessToSave) >> CompletableFuture.completedFuture(expectedUserAccess)
-            1 * eventService.publishUserAccessCreatedEvent(expectedUserAccess) >> null
+            1 * eventPublisher.publishEvent(_) >> null
     }
 
     def "should find user access"() {

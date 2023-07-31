@@ -11,7 +11,6 @@ import org.springframework.test.web.servlet.MockMvc
 import spock.lang.Specification
 
 import javax.sql.DataSource
-import java.util.concurrent.CompletableFuture
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
@@ -40,6 +39,7 @@ class UserControllerIntegrationTest extends Specification {
     }
 
     private static final String DELETE_USER_BY_EMAIL = "DELETE FROM users WHERE username = 'test@gmail.com';"
+    private static final String DELETE_EVENT = "DELETE FROM history WHERE object_id = ?;"
 
     def "should register user successfully"() {
 
@@ -74,13 +74,15 @@ class UserControllerIntegrationTest extends Specification {
             savedUserDao.get().getUsername() == user.getUsername()
 
         cleanup:
+            jdbcTemplate.update(DELETE_EVENT, savedUserService.get().getId())
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
     }
 
     def "should throw UserAlreadyExistsException when user already exists"() {
+
         given:
             User user = new User("test@gmail.com", "test", "pass")
-            userService.saveUser(user).join()
+            def savedUser = userService.saveUser(user).join()
 
         when:
             def mvcResult = mockMvc.perform(post("/registration")
@@ -103,8 +105,8 @@ class UserControllerIntegrationTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
     }
-
 
     def "should throw MethodArgumentNotValidException when field is empty"() {
 
@@ -148,7 +150,7 @@ class UserControllerIntegrationTest extends Specification {
 
         given:
             User user = new User("test@gmail.com", "test", "pass")
-            userService.saveUser(user).join()
+            def savedUser = userService.saveUser(user).join()
 
         when:
             def mvcResult = mockMvc.perform(post("/login")
@@ -175,6 +177,7 @@ class UserControllerIntegrationTest extends Specification {
             validUserDao.getUsername() == user.getUsername()
 
         cleanup:
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
     }
 
@@ -199,13 +202,10 @@ class UserControllerIntegrationTest extends Specification {
 
         given:
             User user = new User("test@gmail.com", "test", "pass")
-            CompletableFuture<Optional<User>> savedUserFuture = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserByEmail(user.getUsername()) })
-
-            def savedUser = savedUserFuture.join()
+            def savedUser = userService.saveUser(user).join()
 
         when:
-            def result = mockMvc.perform(delete("/delete/{username}/", savedUser.get().getUsername()))
+            def result = mockMvc.perform(delete("/delete/{username}/", savedUser.getUsername()))
                 .andExpect(request().asyncStarted())
                 .andReturn()
 
@@ -219,5 +219,8 @@ class UserControllerIntegrationTest extends Specification {
         and:
             Optional<User> deletedUserDao = userDao.findUserByEmail(user.getUsername()).join()
             deletedUserDao.isEmpty()
+
+        cleanup:
+            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
     }
 }
