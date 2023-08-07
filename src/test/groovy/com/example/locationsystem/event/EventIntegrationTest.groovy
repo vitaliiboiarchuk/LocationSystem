@@ -41,12 +41,11 @@ class EventIntegrationTest extends Specification {
 
         then:
             def exists = jdbcTemplate.queryForObject(
-                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ? AND details = ?)",
+                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ?)",
                 Boolean,
                 savedUser.getId(),
                 ObjectChangeEvent.ObjectType.USER.name(),
-                ObjectChangeEvent.ActionType.CREATED.name(),
-                savedUser.toString()
+                ObjectChangeEvent.ActionType.CREATED.name()
             )
             exists
 
@@ -59,19 +58,20 @@ class EventIntegrationTest extends Specification {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user).join()
+            def optionalSavedUser = userService.saveUser(user)
+                .thenCompose({ result -> userService.findUserByEmail(user.getUsername()) }).join()
+            def savedUser = optionalSavedUser.get()
 
         when:
             userService.deleteUserByEmail(savedUser.getUsername()).join()
 
         then:
             def exists = jdbcTemplate.queryForObject(
-                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ? AND details = ?)",
+                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ?)",
                 Boolean,
                 savedUser.getId(),
                 ObjectChangeEvent.ObjectType.USER.name(),
-                ObjectChangeEvent.ActionType.DELETED.name(),
-                savedUser.toString()
+                ObjectChangeEvent.ActionType.DELETED.name()
             )
             exists
 
@@ -92,12 +92,11 @@ class EventIntegrationTest extends Specification {
 
         then:
             def exists = jdbcTemplate.queryForObject(
-                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ? AND details = ?)",
+                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ?)",
                 Boolean,
                 savedLoc.getId(),
                 ObjectChangeEvent.ObjectType.LOCATION.name(),
-                ObjectChangeEvent.ActionType.CREATED.name(),
-                savedLoc.toString()
+                ObjectChangeEvent.ActionType.CREATED.name()
             )
             exists
 
@@ -122,12 +121,11 @@ class EventIntegrationTest extends Specification {
 
         then:
             def exists = jdbcTemplate.queryForObject(
-                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ? AND details = ?)",
+                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ?)",
                 Boolean,
                 savedLoc.getId(),
                 ObjectChangeEvent.ObjectType.LOCATION.name(),
-                ObjectChangeEvent.ActionType.DELETED.name(),
-                savedLoc.toString()
+                ObjectChangeEvent.ActionType.DELETED.name()
             )
             exists
 
@@ -153,12 +151,11 @@ class EventIntegrationTest extends Specification {
 
         then:
             def exists = jdbcTemplate.queryForObject(
-                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ? AND details = ?)",
+                "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ?)",
                 Boolean,
                 savedAccess.getId(),
                 ObjectChangeEvent.ObjectType.USER_ACCESS.name(),
-                ObjectChangeEvent.ActionType.CREATED.name(),
-                savedAccess.toString()
+                ObjectChangeEvent.ActionType.CREATED.name()
             )
             exists
 

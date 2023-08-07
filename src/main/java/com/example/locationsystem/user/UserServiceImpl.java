@@ -9,6 +9,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +33,7 @@ public class UserServiceImpl implements UserService {
         return userDao.saveUser(user)
             .thenApply(savedUser -> {
                 eventPublisher.publishEvent(new ObjectChangeEvent(this, ObjectChangeEvent.ObjectType.USER,
-                    ObjectChangeEvent.ActionType.CREATED, savedUser, savedUser.getId()));
+                    ObjectChangeEvent.ActionType.CREATED, new Timestamp(System.currentTimeMillis()), savedUser.getId()));
                 return savedUser;
             });
     }
@@ -48,7 +49,7 @@ public class UserServiceImpl implements UserService {
                         .thenAccept(result ->
                             eventPublisher.publishEvent(new ObjectChangeEvent(this,
                             ObjectChangeEvent.ObjectType.USER, ObjectChangeEvent.ActionType.DELETED,
-                            userOptional.get(), userOptional.get().getId())));
+                            new Timestamp(System.currentTimeMillis()), userOptional.get().getId())));
                 } else {
                     log.warn("User not found by email={}", emailUtil.hideEmail(email));
                     throw new UserNotFoundException("User not found");

@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -28,7 +29,7 @@ public class UserAccessServiceImpl implements UserAccessService {
             .thenApply(savedUserAccess -> {
                 eventPublisher.publishEvent(new ObjectChangeEvent(this, ObjectChangeEvent.ObjectType.USER_ACCESS,
                     ObjectChangeEvent.ActionType.CREATED,
-                    savedUserAccess, savedUserAccess.getId()));
+                    new Timestamp(System.currentTimeMillis()), savedUserAccess.getId()));
                 return savedUserAccess;
             });
     }

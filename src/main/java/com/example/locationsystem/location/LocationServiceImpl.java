@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -53,7 +54,7 @@ public class LocationServiceImpl implements LocationService {
             .thenApply(savedLocation -> {
                 eventPublisher.publishEvent(new ObjectChangeEvent(this, ObjectChangeEvent.ObjectType.LOCATION,
                     ObjectChangeEvent.ActionType.CREATED,
-                    savedLocation, savedLocation.getId()));
+                    new Timestamp(System.currentTimeMillis()), savedLocation.getId()));
                 return savedLocation;
             });
     }
@@ -77,7 +78,7 @@ public class LocationServiceImpl implements LocationService {
                         .thenAccept(result ->
                             eventPublisher.publishEvent(new ObjectChangeEvent(this,
                                 ObjectChangeEvent.ObjectType.LOCATION, ObjectChangeEvent.ActionType.DELETED,
-                                locationOptional.get(), locationOptional.get().getId())));
+                                new Timestamp(System.currentTimeMillis()), locationOptional.get().getId())));
                 } else {
                     log.warn("Location not found by name={} and user id={}", name, userId);
                     throw new LocationNotFoundException("Location not found");

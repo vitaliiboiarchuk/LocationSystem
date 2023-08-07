@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.context.ApplicationEvent;
 
+import java.sql.Timestamp;
+
 @Getter
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ObjectChangeEvent extends ApplicationEvent {
@@ -22,21 +24,21 @@ public class ObjectChangeEvent extends ApplicationEvent {
 
     ObjectType objectType;
     ActionType actionType;
-    Object data;
+    Timestamp eventTime;
     Long objectId;
 
     public ObjectChangeEvent(
         Object source,
         ObjectType objectType,
         ActionType actionType,
-        Object data,
+        Timestamp eventTime,
         Long objectId
     ) {
 
         super(source);
         this.objectType = objectType;
         this.actionType = actionType;
-        this.data = data;
+        this.eventTime = eventTime;
         this.objectId = objectId;
     }
 }

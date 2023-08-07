@@ -16,7 +16,7 @@ public class ObjectChangeHistoryListener {
     @EventListener(ObjectChangeEvent.class)
     public void insertEvent(ObjectChangeEvent event) {
 
-        eventDao.insertEvent(event.getObjectType(), event.getActionType(), event.getData(), event.getObjectId());
+        eventDao.insertEvent(event.getObjectType(), event.getActionType(), event.getEventTime(), event.getObjectId());
     }
 }
 
