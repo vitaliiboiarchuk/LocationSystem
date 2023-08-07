@@ -26,15 +26,19 @@ class EventIntegrationTest extends Specification {
     @Autowired
     JdbcTemplate jdbcTemplate
 
+    User user
+
     private static final String DELETE_USER = "DELETE FROM users WHERE username = 'test@gmail.com';"
     private static final String DELETE_LOCATION = "DELETE FROM locations WHERE name = 'test';"
     private static final String DELETE_ACCESS = "DELETE FROM accesses WHERE title = 'test';"
     private static final String DELETE_EVENT = "DELETE FROM history WHERE object_id = ?;"
 
-    def "should insert event into database when user is created"() {
+    void setup() {
 
-        given:
-            def user = new User(username: "test@gmail.com", name: "test", password: "pass")
+        user = new User(username: "test@gmail.com", name: "test", password: "pass")
+    }
+
+    def "should insert event into database when user is created"() {
 
         when:
             def savedUserId = userService.saveUser(user).join()
@@ -57,7 +61,6 @@ class EventIntegrationTest extends Specification {
     def "should insert event into database when user is deleted"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
         when:
@@ -80,7 +83,6 @@ class EventIntegrationTest extends Specification {
     def "should insert event into database when location is created"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
             def location = new Location(name: "test", address: "test", userId: savedUserId)
@@ -108,7 +110,6 @@ class EventIntegrationTest extends Specification {
     def "should insert event into database when location is deleted"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
             def location = new Location(name: "test", address: "test", userId: savedUserId)
@@ -136,7 +137,6 @@ class EventIntegrationTest extends Specification {
     def "should insert event into database when user access is created"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
             def location = new Location(name: "test", address: "test", userId: savedUserId)
