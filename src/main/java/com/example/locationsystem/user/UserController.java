@@ -30,7 +30,7 @@ public class UserController {
     EmailUtil emailUtil;
 
     @PostMapping("/registration")
-    public CompletableFuture<ResponseEntity<User>> registerPost(@Valid @RequestBody User user) {
+    public CompletableFuture<ResponseEntity<Long>> registerPost(@Valid @RequestBody User user) {
 
         return userService.findUserByEmail(user.getUsername())
             .thenCompose(existingUser -> {

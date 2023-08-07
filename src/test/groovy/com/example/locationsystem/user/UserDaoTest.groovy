@@ -63,12 +63,12 @@ class UserDaoTest extends Specification {
             User user = new User("user4", "name4", "pass4")
 
         when:
-            CompletableFuture<User> futureResult = userDao.saveUser(user)
+            CompletableFuture<Long> futureResult = userDao.saveUser(user)
 
         then:
 
-            User savedUser = futureResult.get()
-            savedUser.getUsername() == user.getUsername()
+            Long savedUserId = futureResult.get()
+            savedUserId != null
 
         cleanup:
             jdbcTemplate.execute("DELETE FROM users WHERE username = 'user4'")

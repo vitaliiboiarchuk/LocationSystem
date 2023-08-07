@@ -37,13 +37,13 @@ class EventIntegrationTest extends Specification {
             def user = new User(username: "test@gmail.com", name: "test", password: "pass")
 
         when:
-            def savedUser = userService.saveUser(user).join()
+            def savedUserId = userService.saveUser(user).join()
 
         then:
             def exists = jdbcTemplate.queryForObject(
                 "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ?)",
                 Boolean,
-                savedUser.getId(),
+                savedUserId,
                 ObjectChangeEvent.ObjectType.USER.name(),
                 ObjectChangeEvent.ActionType.CREATED.name()
             )
@@ -51,41 +51,39 @@ class EventIntegrationTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER)
-            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUserId)
     }
 
     def "should insert event into database when user is deleted"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def optionalSavedUser = userService.saveUser(user)
-                .thenCompose({ result -> userService.findUserByEmail(user.getUsername()) }).join()
-            def savedUser = optionalSavedUser.get()
+            def savedUserId = userService.saveUser(user).join()
 
         when:
-            userService.deleteUserByEmail(savedUser.getUsername()).join()
+            userService.deleteUserByEmail(user.getUsername()).join()
 
         then:
             def exists = jdbcTemplate.queryForObject(
                 "SELECT EXISTS(SELECT 1 FROM history WHERE object_id = ? AND object_type = ? AND action_type = ?)",
                 Boolean,
-                savedUser.getId(),
+                savedUserId,
                 ObjectChangeEvent.ObjectType.USER.name(),
                 ObjectChangeEvent.ActionType.DELETED.name()
             )
             exists
 
         cleanup:
-            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUserId)
     }
 
     def "should insert event into database when location is created"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user).join()
+            def savedUserId = userService.saveUser(user).join()
 
-            def location = new Location(name: "test", address: "test", userId: savedUser.getId())
+            def location = new Location(name: "test", address: "test", userId: savedUserId)
 
         when:
             def savedLoc = locationService.saveLocation(location, location.getUserId()).join()
@@ -104,16 +102,16 @@ class EventIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_LOCATION)
             jdbcTemplate.execute(DELETE_USER)
             jdbcTemplate.update(DELETE_EVENT, savedLoc.getId())
-            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUserId)
     }
 
     def "should insert event into database when location is deleted"() {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user).join()
+            def savedUserId = userService.saveUser(user).join()
 
-            def location = new Location(name: "test", address: "test", userId: savedUser.getId())
+            def location = new Location(name: "test", address: "test", userId: savedUserId)
             def savedLoc = locationService.saveLocation(location, location.getUserId()).join()
 
         when:
@@ -131,7 +129,7 @@ class EventIntegrationTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER)
-            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUserId)
             jdbcTemplate.update(DELETE_EVENT, savedLoc.getId())
     }
 
@@ -139,12 +137,12 @@ class EventIntegrationTest extends Specification {
 
         given:
             def user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user).join()
+            def savedUserId = userService.saveUser(user).join()
 
-            def location = new Location(name: "test", address: "test", userId: savedUser.getId())
+            def location = new Location(name: "test", address: "test", userId: savedUserId)
             def savedLoc = locationService.saveLocation(location, location.getUserId()).join()
 
-            def userAccess = new UserAccess(title: "test", userId: savedUser.getId(), locationId: savedLoc.getId())
+            def userAccess = new UserAccess(title: "test", userId: savedUserId, locationId: savedLoc.getId())
 
         when:
             def savedAccess = userAccessService.saveUserAccess(userAccess).join()
@@ -165,7 +163,7 @@ class EventIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_USER)
             jdbcTemplate.update(DELETE_EVENT, savedAccess.getId())
             jdbcTemplate.update(DELETE_EVENT, savedLoc.getId())
-            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUserId)
     }
 }
 

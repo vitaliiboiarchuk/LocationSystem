@@ -10,7 +10,7 @@ public interface UserService {
 
     CompletableFuture<User> findUserByEmailAndPassword(String email, String password);
 
-    CompletableFuture<User> saveUser(User user);
+    CompletableFuture<Long> saveUser(User user);
 
     CompletableFuture<List<User>> findAllUsersOnLocation(Long locationId, Long userId);
 

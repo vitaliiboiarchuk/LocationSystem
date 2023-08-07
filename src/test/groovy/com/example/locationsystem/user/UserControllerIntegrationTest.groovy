@@ -55,13 +55,6 @@ class UserControllerIntegrationTest extends Specification {
 
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
-                .andExpect { result ->
-                    def jsonSlurper = new JsonSlurper()
-                    def jsonResponse = jsonSlurper.parseText(mvcResult.response.contentAsString)
-                    jsonResponse['username'] == user.getUsername()
-                    jsonResponse['name'] == user.getName()
-                    jsonResponse['password'] == user.getPassword()
-                }
 
         then:
             Optional<User> savedUserService = userService.findUserByEmail(user.getUsername()).join()
@@ -82,7 +75,7 @@ class UserControllerIntegrationTest extends Specification {
 
         given:
             User user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user).join()
+            def savedUserId = userService.saveUser(user).join()
 
         when:
             def mvcResult = mockMvc.perform(post("/registration")
@@ -105,7 +98,7 @@ class UserControllerIntegrationTest extends Specification {
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
-            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUserId)
     }
 
     def "should throw MethodArgumentNotValidException when field is empty"() {
@@ -150,7 +143,7 @@ class UserControllerIntegrationTest extends Specification {
 
         given:
             User user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user).join()
+            def savedUserId = userService.saveUser(user).join()
 
         when:
             def mvcResult = mockMvc.perform(post("/login")
@@ -177,7 +170,7 @@ class UserControllerIntegrationTest extends Specification {
             validUserDao.getUsername() == user.getUsername()
 
         cleanup:
-            jdbcTemplate.update(DELETE_EVENT, savedUser.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUserId)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
     }
 
@@ -202,7 +195,8 @@ class UserControllerIntegrationTest extends Specification {
 
         given:
             User user = new User("test@gmail.com", "test", "pass")
-            def savedUser = userService.saveUser(user).join()
+            def savedUser = userService.saveUser(user)
+                .thenCompose({ result -> userService.findUserById(result) }).join()
 
         when:
             def result = mockMvc.perform(delete("/delete/{username}/", savedUser.getUsername()))

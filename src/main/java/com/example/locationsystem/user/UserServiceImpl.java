@@ -27,14 +27,14 @@ public class UserServiceImpl implements UserService {
     ApplicationEventPublisher eventPublisher;
 
     @Override
-    public CompletableFuture<User> saveUser(User user) {
+    public CompletableFuture<Long> saveUser(User user) {
 
         log.info("Saving user with email={}", emailUtil.hideEmail(user.getUsername()));
         return userDao.saveUser(user)
-            .thenApply(savedUser -> {
+            .thenApply(savedUserId -> {
                 eventPublisher.publishEvent(new ObjectChangeEvent(this, ObjectChangeEvent.ObjectType.USER,
-                    ObjectChangeEvent.ActionType.CREATED, new Timestamp(System.currentTimeMillis()), savedUser.getId()));
-                return savedUser;
+                    ObjectChangeEvent.ActionType.CREATED, new Timestamp(System.currentTimeMillis()), savedUserId));
+                return savedUserId;
             });
     }
 

@@ -66,7 +66,8 @@ public class UserDao {
         });
     }
 
-    public CompletableFuture<User> saveUser(User user) {
+
+    public CompletableFuture<Long> saveUser(User user) {
 
         return CompletableFuture.supplyAsync(() -> {
 
@@ -86,8 +87,7 @@ public class UserDao {
                     user.setId(rs.getLong(1));
                 }
                 log.info("User with email={} saved", emailUtil.hideEmail(user.getUsername()));
-                return user;
-
+                return user.getId();
             } catch (SQLException e) {
                 throw new RuntimeException("Failed to save user", e);
             }

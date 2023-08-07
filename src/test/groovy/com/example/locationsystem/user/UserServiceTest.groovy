@@ -37,10 +37,10 @@ class UserServiceTest extends Specification {
             def result = userService.saveUser(userToSave).join()
 
         then:
-            result == expectedUser
+            result == expectedUser.getId()
 
         then:
-            1 * userDao.saveUser(userToSave) >> CompletableFuture.completedFuture(expectedUser)
+            1 * userDao.saveUser(userToSave) >> CompletableFuture.completedFuture(expectedUser.getId())
             1 * eventPublisher.publishEvent(_) >> null
     }
 
