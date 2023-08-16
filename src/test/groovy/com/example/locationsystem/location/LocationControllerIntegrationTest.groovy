@@ -14,10 +14,10 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.MockMvc
+import spock.lang.Shared
 import spock.lang.Specification
 
 import javax.servlet.http.Cookie
-import javax.sql.DataSource
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
@@ -25,6 +25,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @SpringBootTest
 class LocationControllerIntegrationTest extends Specification {
+
+    @Shared
+    def user = new User(username: "test@gmail.com", name: "test", password: "pass")
+
+    @Shared
+    def user2 = new User(username: "test2@gmail.com", name: "test", password: "pass")
 
     @Autowired
     MockMvc mockMvc
@@ -47,15 +53,8 @@ class LocationControllerIntegrationTest extends Specification {
     @Autowired
     UserAccessDao userAccessDao
 
-    JdbcTemplate jdbcTemplate
-
     @Autowired
-    DataSource dataSource
-
-    void setup() {
-
-        jdbcTemplate = new JdbcTemplate(dataSource)
-    }
+    JdbcTemplate jdbcTemplate
 
     private static final String DELETE_LOCATION_BY_NAME = "DELETE FROM locations WHERE name = 'name';"
     private static final String DELETE_LOCATION_BY_NAME_2 = "DELETE FROM locations WHERE name = 'name2';"
@@ -66,9 +65,9 @@ class LocationControllerIntegrationTest extends Specification {
     def "should add location successfully"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
-            def location = new Location("name", "address", savedUserId)
+
+            def location = new Location(name: "name", address: "address", userId: savedUserId)
 
         when:
             def mvcResult = mockMvc.perform(post("/location/add")
@@ -81,37 +80,31 @@ class LocationControllerIntegrationTest extends Specification {
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect { result ->
-                    def jsonSlurper = new JsonSlurper()
-                    def jsonResponse = jsonSlurper.parseText(mvcResult.response.contentAsString)
+                    def jsonSlurp = new JsonSlurper()
+                    def jsonResponse = jsonSlurp.parseText(mvcResult.response.contentAsString)
                     jsonResponse['name'] == location.getName()
                     jsonResponse['address'] == location.getAddress()
                 }
-        then:
-            Optional<Location> addedLocationService = locationService.findLocationByNameAndUserId(location.getName(),
-                savedUserId).join()
-            addedLocationService.get().getName() == location.getName()
-            addedLocationService.get().getAddress() == location.getAddress()
 
-        and:
-            Optional<Location> addedLocationDao = locationDao.findLocationByNameAndUserId(location.getName(),
+        then:
+            Optional<Location> addedLocation = locationService.findLocationByNameAndUserId(location.getName(),
                 savedUserId).join()
-            addedLocationDao.get().getName() == location.getName()
-            addedLocationDao.get().getAddress() == location.getAddress()
+            addedLocation.get().getName() == location.getName()
+            addedLocation.get().getAddress() == location.getAddress()
 
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.update(DELETE_EVENT, savedUserId)
-            jdbcTemplate.update(DELETE_EVENT, addedLocationService.get().getId())
+            jdbcTemplate.update(DELETE_EVENT, addedLocation.get().getId())
     }
 
     def "should throw MethodArgumentNotValidException when field is empty"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUser = userService.saveUser(user).join()
 
-            def emptyFieldLocation = new Location("", "add1", savedUser)
+            def emptyFieldLocation = new Location(name: "", address: "add1", userId: savedUser)
 
         when:
             def result = mockMvc.perform(post("/location/add")
@@ -125,7 +118,6 @@ class LocationControllerIntegrationTest extends Specification {
             def errorMessage = result.response.getHeader("errorMessage")
             errorMessage == "Field can not be empty"
             0 * locationService.saveLocation(emptyFieldLocation)
-            0 * locationDao.saveLocation(emptyFieldLocation)
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
@@ -135,10 +127,9 @@ class LocationControllerIntegrationTest extends Specification {
     def "should throw AlreadyExistsException when location already exists"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
-            def location = new Location("name", "address", savedUserId)
+            def location = new Location(name: "name", address: "address", userId: savedUserId)
             def savedLocation = locationService.saveLocation(location, savedUserId).join()
 
         when:
@@ -155,7 +146,6 @@ class LocationControllerIntegrationTest extends Specification {
 
         then:
             0 * locationService.saveLocation(location)
-            0 * locationDao.saveLocation(location)
 
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
@@ -167,16 +157,13 @@ class LocationControllerIntegrationTest extends Specification {
     def "should show my locations"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
-
-            def location = new Location("name", "address", savedUserId)
-            def savedLocation = locationService.saveLocation(location, savedUserId).join()
-
-            def user2 = new User("test2@gmail.com", "test", "pass")
             def savedUser2Id = userService.saveUser(user2).join()
 
-            def location2 = new Location("name2", "address", savedUser2Id)
+            def location = new Location(name: "name", address: "address", userId: savedUserId)
+            def savedLocation = locationService.saveLocation(location, savedUserId).join()
+
+            def location2 = new Location(name: "name2", address: "address", userId: savedUser2Id)
             def savedLocation2 = locationService.saveLocation(location2, savedUser2Id).join()
 
             def userAccess = new UserAccess("ADMIN", savedUserId, savedLocation2.getId())
@@ -193,8 +180,8 @@ class LocationControllerIntegrationTest extends Specification {
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect { result ->
-                    def jsonSlurper = new JsonSlurper()
-                    def jsonResponse = jsonSlurper.parseText(mvcResult.response.contentAsString)
+                    def jsonSlurp = new JsonSlurper()
+                    def jsonResponse = jsonSlurp.parseText(mvcResult.response.contentAsString)
                     expectedLocs.each { expectedLoc ->
                         jsonResponse.find { it['name'] == expectedLoc.name && it['address'] == expectedLoc.address }
                     }
@@ -215,14 +202,11 @@ class LocationControllerIntegrationTest extends Specification {
     def "should share location successfully"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
-
-            def location = new Location("name", "address", savedUserId)
-            def savedLocation = locationService.saveLocation(location, savedUserId).join()
-
-            def user2 = new User("test2@gmail.com", "test", "pass")
             def savedUser2Id = userService.saveUser(user2).join()
+
+            def location = new Location(name: "name", address: "address", userId: savedUserId)
+            def savedLocation = locationService.saveLocation(location, savedUserId).join()
 
             def userAccess = new UserAccess("ADMIN", savedUser2Id, savedLocation.getId())
 
@@ -237,33 +221,32 @@ class LocationControllerIntegrationTest extends Specification {
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect { result ->
-                    def jsonSlurper = new JsonSlurper()
-                    def jsonResponse = jsonSlurper.parseText(mvcResult.response.contentAsString)
+                    def jsonSlurp = new JsonSlurper()
+                    def jsonResponse = jsonSlurp.parseText(mvcResult.response.contentAsString)
                     jsonResponse['title'] == userAccess.getTitle()
                     jsonResponse['locationId'] == userAccess.getLocationId()
                     jsonResponse['userId'] == userAccess.getUserId()
                 }
         then:
-            UserAccess addedUserAccessDao = userAccessDao.findUserAccess(userAccess, savedUserId).join()
-            userAccess.getTitle() == addedUserAccessDao.getTitle()
+            UserAccess addedUserAccess = userAccessService.findUserAccess(userAccess, savedUserId).join()
+            userAccess.getTitle() == addedUserAccess.getTitle()
 
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
-            jdbcTemplate.update(DELETE_EVENT, addedUserAccessDao.getId())
+            jdbcTemplate.update(DELETE_EVENT, addedUserAccess.getId())
             jdbcTemplate.update(DELETE_EVENT, savedUserId)
             jdbcTemplate.update(DELETE_EVENT, savedUser2Id)
             jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
     }
 
-    def "should throw NoLocationOrUserFoundException when no location or user found to share"() {
+    def "should throw LocationOrUserFoundException when no location or user found to share"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
-            def location = new Location("name", "address", savedUserId)
+            def location = new Location(name: "name", address: "address", userId: savedUserId)
             def savedLocation = locationService.saveLocation(location, savedUserId).join()
 
             def userAccess = new UserAccess("ADMIN", savedUserId + 1, savedLocation.getId() + 1)
@@ -282,7 +265,6 @@ class LocationControllerIntegrationTest extends Specification {
 
         then:
             0 * userAccessService.saveUserAccess(userAccess)
-            0 * userAccessDao.saveUserAccess(userAccess)
 
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
@@ -294,20 +276,14 @@ class LocationControllerIntegrationTest extends Specification {
     def "should show friends on location if all my locations have location with specified id"() {
 
         given:
-            def owner = new User("test@gmail.com", "test", "pass")
-            def savedOwnerId = userService.saveUser(owner).join()
+            def savedOwnerId = userService.saveUser(user).join()
+            def savedFriendId = userService.saveUser(user2).join()
 
-            def location = new Location("name", "address", savedOwnerId)
+            def location = new Location(name: "name", address: "address", userId: savedOwnerId)
             def savedLocation = locationService.saveLocation(location, savedOwnerId).join()
 
-            def friend = new User("test2@gmail.com", "test", "pass")
-            def savedFriend = userService.saveUser(friend)
-                .thenCompose({ result -> userService.findUserById(result) }).join()
-
-            def userAccess = new UserAccess("ADMIN", savedFriend.getId(), savedLocation.getId())
+            def userAccess = new UserAccess("ADMIN", savedFriendId, savedLocation.getId())
             def savedAccess = userAccessService.saveUserAccess(userAccess).join()
-
-            def expectedFriends = [savedFriend]
 
         expect:
             def mvcResult = mockMvc.perform(get("/location/{locationId}/", savedLocation.getId())
@@ -317,12 +293,12 @@ class LocationControllerIntegrationTest extends Specification {
 
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
-                .andExpect { result ->
-                    def jsonSlurper = new JsonSlurper()
-                    def jsonResponse = jsonSlurper.parseText(mvcResult.response.contentAsString)
-                    expectedFriends.each { expectedFriend ->
-                        jsonResponse.find { it['name'] == expectedFriend.name && it['username'] == expectedFriend.username }
-                    }
+                .andDo { result ->
+                    def content = result.response.contentAsString
+                    def objectMapper = new ObjectMapper()
+                    def userIds = objectMapper.readValue(content, List.class)
+                    userIds.size() == 1
+                    userIds.contains([savedFriendId])
                 }
 
         cleanup:
@@ -331,21 +307,18 @@ class LocationControllerIntegrationTest extends Specification {
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL_2)
             jdbcTemplate.update(DELETE_EVENT, savedOwnerId)
             jdbcTemplate.update(DELETE_EVENT, savedLocation.getId())
-            jdbcTemplate.update(DELETE_EVENT, savedFriend.getId())
+            jdbcTemplate.update(DELETE_EVENT, savedFriendId)
             jdbcTemplate.update(DELETE_EVENT, savedAccess.getId())
     }
 
     def "should throw LocationNotFoundException if all my locations not have location with specified id"() {
 
         given:
-            def owner = new User("test@gmail.com", "test", "pass")
-            def savedOwnerId = userService.saveUser(owner).join()
-
-            def location = new Location("name", "address", savedOwnerId)
-            def savedLocation = locationService.saveLocation(location, savedOwnerId).join()
-
-            def user2 = new User("test2@gmail.com", "test", "pass")
+            def savedOwnerId = userService.saveUser(user).join()
             def savedUser2Id = userService.saveUser(user2).join()
+
+            def location = new Location(name: "name", address: "address", userId: savedOwnerId)
+            def savedLocation = locationService.saveLocation(location, savedOwnerId).join()
 
         when:
             def result = mockMvc.perform(get("/location/{locationId}/", savedLocation.getId())
@@ -358,12 +331,8 @@ class LocationControllerIntegrationTest extends Specification {
                 .andExpect(header().string("errorMessage", "Location not found"))
 
         then:
-            List<User> usersOnLocService = userService.findAllUsersOnLocation(savedLocation.getId(), savedUser2Id).join()
-            usersOnLocService.isEmpty()
-
-        and:
-            List<User> usersOnLocDaoAdmin = userDao.findAllUsersOnLocation(savedLocation.getId(), savedUser2Id).join()
-            usersOnLocDaoAdmin.isEmpty()
+            List<Long> usersOnLoc = userService.findAllUsersOnLocation(savedLocation.getId(), savedUser2Id).join()
+            usersOnLoc.isEmpty()
 
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
@@ -377,14 +346,11 @@ class LocationControllerIntegrationTest extends Specification {
     def "should change user access successfully"() {
 
         given:
-            def owner = new User("test@gmail.com", "test", "pass")
-            def savedOwnerId = userService.saveUser(owner).join()
+            def savedOwnerId = userService.saveUser(user).join()
+            def savedFriendId = userService.saveUser(user2).join()
 
-            def location = new Location("name", "address", savedOwnerId)
+            def location = new Location(name: "name", address: "address", userId: savedOwnerId)
             def savedLocation = locationService.saveLocation(location, savedOwnerId).join()
-
-            def friend = new User("test2@gmail.com", "test", "pass")
-            def savedFriendId = userService.saveUser(friend).join()
 
             def userAccess = new UserAccess("ADMIN", savedFriendId, savedLocation.getId())
             def savedAccess = userAccessService.saveUserAccess(userAccess).join()
@@ -399,16 +365,10 @@ class LocationControllerIntegrationTest extends Specification {
 
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
-                .andExpect { result ->
-                    def jsonSlurper = new JsonSlurper()
-                    def jsonResponse = jsonSlurper.parseText(mvcResult.response.contentAsString)
-                    jsonResponse['title'] == 'READ'
-                    jsonResponse['locationId'] == userAccess.getLocationId()
-                    jsonResponse['userId'] == userAccess.getUserId()
-                }
+
         then:
-            UserAccess changedAccessDao = userAccessDao.findUserAccess(userAccess, savedOwnerId).join()
-            changedAccessDao.getTitle() == "READ"
+            UserAccess changedAccess = userAccessService.findUserAccess(userAccess, savedOwnerId).join()
+            changedAccess.getTitle() == "READ"
 
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
@@ -423,14 +383,11 @@ class LocationControllerIntegrationTest extends Specification {
     def "should throw UserAccessNotFoundException when user access not found"() {
 
         given:
-            def owner = new User("test@gmail.com", "test", "pass")
-            def savedOwnerId = userService.saveUser(owner).join()
+            def savedOwnerId = userService.saveUser(user).join()
+            def savedFriendId = userService.saveUser(user2).join()
 
-            def location = new Location("name", "address", savedOwnerId)
+            def location = new Location(name: "name", address: "address", userId: savedOwnerId)
             def savedLocation = locationService.saveLocation(location, savedOwnerId).join()
-
-            def friend = new User("test2@gmail.com", "test", "pass")
-            def savedFriendId = userService.saveUser(friend).join()
 
             def userAccess = new UserAccess("ADMIN", savedFriendId, savedLocation.getId())
 
@@ -448,7 +405,6 @@ class LocationControllerIntegrationTest extends Specification {
 
         then:
             0 * userAccessService.changeUserAccess(userAccess)
-            0 * userAccessDao.changeUserAccess(userAccess)
 
         cleanup:
             jdbcTemplate.execute(DELETE_LOCATION_BY_NAME)
@@ -462,10 +418,9 @@ class LocationControllerIntegrationTest extends Specification {
     def "should delete location successfully"() {
 
         given:
-            def user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
-            def location = new Location("name", "address", savedUserId)
+            def location = new Location(name: "name", address: "address", userId: savedUserId)
             def savedLocation = locationService.saveLocation(location, savedUserId).join()
 
         when:
@@ -478,10 +433,8 @@ class LocationControllerIntegrationTest extends Specification {
                 .andExpect(status().isOk())
 
         then:
-            def deletedLocationDao = locationDao.deleteLocation(savedLocation.getName(), savedUserId)
-                .thenCompose({ result5 -> locationDao.findLocationByNameAndUserId(savedLocation.getName(), savedLocation.getUserId()) })
-                .join()
-            deletedLocationDao.isEmpty()
+            def deletedLocation = locationService.findLocationByNameAndUserId(savedLocation.getName(), savedLocation.getUserId()).join()
+            deletedLocation.isEmpty()
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
@@ -492,10 +445,9 @@ class LocationControllerIntegrationTest extends Specification {
     def "should throw LocationNotFoundException when location owner not found for deleting location"() {
 
         given:
-            def owner = new User("test@gmail.com", "test", "pass")
-            def savedOwnerId = userService.saveUser(owner).join()
+            def savedOwnerId = userService.saveUser(user).join()
 
-            def location = new Location("name", "address", savedOwnerId)
+            def location = new Location(name: "name", address: "address", userId: savedOwnerId)
 
         when:
             def result = mockMvc.perform(delete("/location/delete/{name}/", location.getName())
@@ -509,7 +461,6 @@ class LocationControllerIntegrationTest extends Specification {
 
         then:
             0 * locationService.deleteLocation(location.getId(), savedOwnerId)
-            0 * locationDao.deleteLocation(location.getId(), savedOwnerId)
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)

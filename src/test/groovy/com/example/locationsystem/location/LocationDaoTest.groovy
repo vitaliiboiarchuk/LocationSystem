@@ -7,22 +7,16 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
 import spock.lang.Specification
 
-import javax.sql.DataSource
-import java.util.concurrent.CompletableFuture
-
 @SpringBootTest
 class LocationDaoTest extends Specification {
 
+    @Autowired
     LocationDao locationDao
-    JdbcTemplate jdbcTemplate
 
     @Autowired
-    DataSource dataSource
+    JdbcTemplate jdbcTemplate
 
     def setup() {
-
-        jdbcTemplate = new JdbcTemplate(dataSource)
-        locationDao = new LocationDao(jdbcTemplate)
 
         jdbcTemplate.execute("INSERT INTO users(id,name,password,username) VALUES(100,'vitalii','pass1','vitalii'),(200,'natalia','pass2','natalia'),(300,'oleh','pass3','oleh')")
         jdbcTemplate.execute("INSERT INTO locations(id,name,address,user_id) VALUES (100, 'home','test',100),(200,'gym','naleczowska',100),(300,'swimming pool','sobieskiego',300)")
@@ -44,10 +38,9 @@ class LocationDaoTest extends Specification {
     def "should find all user locations"() {
 
         when:
-            CompletableFuture<List<Location>> futureResult = locationDao.findAllUserLocations(100L)
+            def locations = locationDao.findAllUserLocations(100L).join()
 
         then:
-            List<Location> locations = futureResult.get()
             locations.size() == 3
             locations[0].getName() == 'swimming pool'
             locations[1].getName() == 'home'
@@ -57,10 +50,9 @@ class LocationDaoTest extends Specification {
     def "should find location in user locations"() {
 
         when:
-            CompletableFuture<Location> futureResult = locationDao.findLocationInUserLocations(100L, 100L)
+            def location = locationDao.findLocationInUserLocations(100L, 100L).join()
 
         then:
-            Location location = futureResult.get()
             location.getName() == 'home'
             location.getAddress() == 'test'
     }
@@ -68,25 +60,25 @@ class LocationDaoTest extends Specification {
     def "should find location by name and userId"() {
 
         when:
-            CompletableFuture<Optional<Location>> futureResult = locationDao.findLocationByNameAndUserId("gym", 100L)
+            def location = locationDao.findLocationByNameAndUserId("gym", 100L).join()
 
         then:
-            futureResult.get().isPresent()
-            futureResult.get().get().getAddress() == 'naleczowska'
+            location.isPresent()
+            location.get().getAddress() == 'naleczowska'
     }
 
     def "should save location"() {
 
         given:
-            Location location = new Location("title1", "add1", 100L)
+            def location = new Location(name: "title1", address: "add1", userId: 100L)
 
         when:
-            CompletableFuture<Location> futureResult = locationDao.saveLocation(location)
+            def loc = locationDao.saveLocation(location).join()
 
         then:
-            Location loc = futureResult.get()
-            loc != null
             loc.getName() == 'title1'
+            loc.getAddress() == "add1"
+            loc.getUserId() == 100L
 
         cleanup:
             jdbcTemplate.execute("DELETE FROM locations WHERE name = 'title1'")
@@ -99,7 +91,7 @@ class LocationDaoTest extends Specification {
             jdbcTemplate.execute("INSERT INTO accesses(id,title,location_id,user_id) VALUES(500,'ADMIN',500,200)")
 
         when:
-            locationDao.deleteLocation('name1', 100L)
+            locationDao.deleteLocation('name1', 100L).join()
 
         then:
             def deletedAccess = jdbcTemplate.query("SELECT * FROM accesses WHERE location_id = ?", BeanPropertyRowMapper.newInstance(UserAccess.class), 500L)
@@ -111,20 +103,18 @@ class LocationDaoTest extends Specification {
     def "should find locations not shared to user"() {
 
         when:
-            CompletableFuture<Location> futureResult = locationDao.findNotSharedToUserLocation(100L, 200L, 200L)
+            def locToShare = locationDao.findNotSharedToUserLocation(100L, 200L, 200L).join()
 
         then:
-            Location locToShare = futureResult.get()
             locToShare.getName() == 'gym'
     }
 
     def "should find location by id"() {
 
         when:
-            CompletableFuture<Location> futureResult = locationDao.findLocationById(100L)
+            def loc = locationDao.findLocationById(100L).join()
 
         then:
-            Location loc = futureResult.get()
             loc.getName() == 'home'
     }
 }

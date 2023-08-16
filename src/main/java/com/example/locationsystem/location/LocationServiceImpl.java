@@ -60,11 +60,11 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public CompletableFuture<Location> findNotSharedToUserLocation(Long id, Long locId, Long userId) {
+    public CompletableFuture<Location> findNotSharedToUserLocation(Long ownerId, Long locId, Long userId) {
 
         log.info("Finding not shared to user location by owner id={}, location id={}, user to share id={}",
-            id, locId, userId);
-        return locationDao.findNotSharedToUserLocation(id, locId, userId);
+            ownerId, locId, userId);
+        return locationDao.findNotSharedToUserLocation(ownerId, locId, userId);
     }
 
     @Override

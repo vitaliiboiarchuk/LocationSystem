@@ -88,40 +88,36 @@ public class LocationDao {
     public CompletableFuture<Location> saveLocation(Location location) {
 
         return CompletableFuture.supplyAsync(() -> {
-
             try (Connection connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection()) {
-
                 PreparedStatement ps = connection.prepareStatement(SAVE_LOCATION, Statement.RETURN_GENERATED_KEYS);
                 ps.setString(1, location.getName());
                 ps.setString(2, location.getAddress());
                 ps.setLong(3, location.getUserId());
                 ps.executeUpdate();
-
                 ResultSet rs = ps.getGeneratedKeys();
                 if (rs.next()) {
                     location.setId(rs.getLong(1));
                 }
                 log.info("Location saved={}", location);
                 return location;
-
             } catch (SQLException e) {
                 throw new RuntimeException("Failed to save location", e);
             }
         });
     }
 
-    public CompletableFuture<Location> findNotSharedToUserLocation(Long id, Long locId, Long userId) {
+    public CompletableFuture<Location> findNotSharedToUserLocation(Long ownerId, Long locId, Long userId) {
 
         return CompletableFuture.supplyAsync(() ->
             jdbcTemplate.query(FIND_NOT_SHARED_TO_USER_LOCATION,
-                    BeanPropertyRowMapper.newInstance(Location.class), id, locId, id, locId, userId, userId)
+                    BeanPropertyRowMapper.newInstance(Location.class), ownerId, locId, ownerId, locId, userId, userId)
                 .stream()
-                .peek(loc -> log.info("Found not shared to user location by owner id={}, location id={}, user to " +
-                    "share id={}", id, locId, userId))
+                .peek(loc -> log.info("Found not shared to user location by owner id={}, location id={}, user id={}",
+                    ownerId, locId, userId))
                 .findFirst()
                 .orElseThrow(() -> {
                     log.warn("Location or user not found by owner id={}, location id={}, user to share id={}",
-                        id, locId, userId);
+                        ownerId, locId, userId);
                     throw new LocationOrUserNotFoundException("Location or user not found");
                 }));
     }

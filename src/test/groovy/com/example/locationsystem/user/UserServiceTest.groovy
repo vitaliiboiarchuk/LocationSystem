@@ -17,6 +17,7 @@ class UserServiceTest extends Specification {
     UserService userService
     EmailUtil emailUtil
     ApplicationEventPublisher eventPublisher
+
     def setup() {
 
         userDao = Mock(UserDao)
@@ -34,17 +35,17 @@ class UserServiceTest extends Specification {
             def expectedUser = Stub(User)
 
         when:
-            def result = userService.saveUser(userToSave).join()
+            def savedUserId = userService.saveUser(userToSave).join()
 
         then:
-            result == expectedUser.getId()
+            savedUserId == expectedUser.getId()
 
         then:
             1 * userDao.saveUser(userToSave) >> CompletableFuture.completedFuture(expectedUser.getId())
             1 * eventPublisher.publishEvent(_) >> null
     }
 
-    def "findByEmail should return User"() {
+    def "findUserByEmail should return User"() {
 
         given:
             userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
@@ -57,37 +58,35 @@ class UserServiceTest extends Specification {
             result.get().getUsername() == user.getUsername()
     }
 
-    def "findByEmailAndPassword should return User"() {
+    def "findUserByEmailAndPassword should return User"() {
 
         given:
             userDao.findUserByEmailAndPassword(user.getUsername(), user.getPassword()) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword())
+            def result = userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword()).join()
 
         then:
-            result.get() == user
+            result == user
     }
 
     def "findAllUsersWithAccessOnLocation should return Users"() {
 
         given:
-            def accessUser = new User("name", "name", "pass")
-            def accessUsers = [accessUser]
+            def accessUsers = [100L]
             userDao.findAllUsersOnLocation(1L, user.getId()) >> CompletableFuture.completedFuture(accessUsers)
 
         when:
-            def result = userService.findAllUsersOnLocation(1L, user.getId())
+            def userIds = userService.findAllUsersOnLocation(1L, user.getId()).join()
 
         then:
-            def users = result.get()
-            users == accessUsers
+            userIds == accessUsers
     }
 
     def "deleteUserByEmail should delete user and publish an event if the user exists"() {
 
         when:
-            userService.deleteUserByEmail("user1@gmail.com")
+            userService.deleteUserByEmail(user.getUsername()).join()
 
         then:
             1 * userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
@@ -98,7 +97,7 @@ class UserServiceTest extends Specification {
     def "should throw UserNotFoundException when user not found"() {
 
         when:
-            CompletableFuture<Void> result = userService.deleteUserByEmail("test")
+            def result = userService.deleteUserByEmail("test")
 
         then:
             1 * userDao.findUserByEmail("test") >> CompletableFuture.completedFuture(Optional.empty())
@@ -112,7 +111,6 @@ class UserServiceTest extends Specification {
                 Throwable cause = e.getCause()
                 cause instanceof ControllerExceptions.UserNotFoundException
             }
-
     }
 
     def "findById should return User"() {
@@ -121,9 +119,9 @@ class UserServiceTest extends Specification {
             userDao.findUserById(user.getId()) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findUserById(user.getId())
+            def result = userService.findUserById(user.getId()).join()
 
         then:
-            result.get() == user
+            result == user
     }
 }

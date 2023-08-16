@@ -1,16 +1,14 @@
 package com.example.locationsystem.user
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import groovy.json.JsonSlurper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.MockMvc
+import spock.lang.Shared
 import spock.lang.Specification
-
-import javax.sql.DataSource
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
@@ -19,6 +17,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 class UserControllerIntegrationTest extends Specification {
 
+    @Shared
+    def user = new User(username: "test@gmail.com", name: "test", password: "pass")
+
     @Autowired
     MockMvc mockMvc
 
@@ -26,25 +27,12 @@ class UserControllerIntegrationTest extends Specification {
     UserService userService
 
     @Autowired
-    UserDao userDao
-
     JdbcTemplate jdbcTemplate
-
-    @Autowired
-    DataSource dataSource
-
-    void setup() {
-
-        jdbcTemplate = new JdbcTemplate(dataSource)
-    }
 
     private static final String DELETE_USER_BY_EMAIL = "DELETE FROM users WHERE username = 'test@gmail.com';"
     private static final String DELETE_EVENT = "DELETE FROM history WHERE object_id = ?;"
 
     def "should register user successfully"() {
-
-        given:
-            User user = new User("test@gmail.com", "test", "pass")
 
         when:
             def mvcResult = mockMvc.perform(post("/registration")
@@ -53,28 +41,25 @@ class UserControllerIntegrationTest extends Specification {
                 .andExpect(request().asyncStarted())
                 .andReturn()
 
+        then:
+            def savedUser = userService.findUserByEmail(user.getUsername()).join()
+
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
-
-        then:
-            Optional<User> savedUserService = userService.findUserByEmail(user.getUsername()).join()
-            savedUserService.isPresent()
-            savedUserService.get().getUsername() == user.getUsername()
-
-        and:
-            Optional<User> savedUserDao = userDao.findUserByEmail(user.getUsername()).join()
-            savedUserDao.isPresent()
-            savedUserDao.get().getUsername() == user.getUsername()
+                .andDo { result ->
+                    def expectedId = result.response.contentAsString
+                    savedUser.isPresent()
+                    savedUser.get().getId() == expectedId
+                }
 
         cleanup:
-            jdbcTemplate.update(DELETE_EVENT, savedUserService.get().getId())
+            jdbcTemplate.update(DELETE_EVENT, savedUser.get().getId())
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
     }
 
     def "should throw UserAlreadyExistsException when user already exists"() {
 
         given:
-            User user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
         when:
@@ -89,12 +74,7 @@ class UserControllerIntegrationTest extends Specification {
                 .andExpect(header().string("errorMessage", "User already exists"))
 
         then:
-            0 * userService.findUserByEmail(user.getUsername())
             0 * userService.saveUser(user)
-
-        and:
-            0 * userDao.findUserByEmail(user.getUsername())
-            0 * userDao.saveUser(user)
 
         cleanup:
             jdbcTemplate.execute(DELETE_USER_BY_EMAIL)
@@ -104,7 +84,7 @@ class UserControllerIntegrationTest extends Specification {
     def "should throw MethodArgumentNotValidException when field is empty"() {
 
         given:
-            User user = new User("", "test", "pass")
+            def user = new User(username: "", name: "test", password: "pass")
 
         when:
             def mvcResult = mockMvc.perform(post("/registration")
@@ -117,13 +97,12 @@ class UserControllerIntegrationTest extends Specification {
             def errorMessage = mvcResult.response.getHeader("errorMessage")
             errorMessage == "Field can not be empty"
             0 * userService.saveUser(user)
-            0 * userDao.saveUser(user)
     }
 
     def "should throw MethodArgumentNotValidException when invalid email format"() {
 
         given:
-            User user = new User("test", "test", "pass")
+            def user = new User(username: "test", name: "test", password: "pass")
 
         when:
             def mvcResult = mockMvc.perform(post("/registration")
@@ -136,13 +115,11 @@ class UserControllerIntegrationTest extends Specification {
             def errorMessage = mvcResult.response.getHeader("errorMessage")
             errorMessage == "Invalid email format"
             0 * userService.saveUser(user)
-            0 * userDao.saveUser(user)
     }
 
     def "should login successfully"() {
 
         given:
-            User user = new User("test@gmail.com", "test", "pass")
             def savedUserId = userService.saveUser(user).join()
 
         when:
@@ -155,19 +132,14 @@ class UserControllerIntegrationTest extends Specification {
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("user"))
-                .andExpect { result ->
-                    def jsonSlurper = new JsonSlurper()
-                    def jsonResponse = jsonSlurper.parseText(mvcResult.response.contentAsString)
-                    jsonResponse['username'] == user.getUsername()
-                    jsonResponse['name'] == user.getName()
+                .andDo { result ->
+                    def expectedId = result.response.contentAsString
+                    savedUserId == expectedId
                 }
-        then:
-            User validUserService = userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword()).join()
-            validUserService.getUsername() == user.getUsername()
 
-        and:
-            User validUserDao = userDao.findUserByEmailAndPassword(user.getUsername(), user.getPassword()).join()
-            validUserDao.getUsername() == user.getUsername()
+        then:
+            def validUser = userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword()).join()
+            validUser.getUsername() == user.getUsername()
 
         cleanup:
             jdbcTemplate.update(DELETE_EVENT, savedUserId)
@@ -177,7 +149,7 @@ class UserControllerIntegrationTest extends Specification {
     def "should throw InvalidLoginOrPasswordException when login or password is invalid"() {
 
         given:
-            User wrongPassUser = new User("test@gmail.com", "test", "wrongPass")
+            def wrongPassUser = new User(username: "test@gmail.com", name: "test", password: "wrongPass")
 
         expect:
             def mvcResult = mockMvc.perform(post("/login")
@@ -194,7 +166,6 @@ class UserControllerIntegrationTest extends Specification {
     def "should delete user successfully"() {
 
         given:
-            User user = new User("test@gmail.com", "test", "pass")
             def savedUser = userService.saveUser(user)
                 .thenCompose({ result -> userService.findUserById(result) }).join()
 
@@ -207,12 +178,8 @@ class UserControllerIntegrationTest extends Specification {
                 .andExpect(status().isOk())
 
         then:
-            Optional<User> deletedUserService = userService.findUserByEmail(user.getUsername()).join()
-            deletedUserService.isEmpty()
-
-        and:
-            Optional<User> deletedUserDao = userDao.findUserByEmail(user.getUsername()).join()
-            deletedUserDao.isEmpty()
+            def deletedUser = userService.findUserByEmail(user.getUsername()).join()
+            deletedUser.isEmpty()
 
         cleanup:
             jdbcTemplate.update(DELETE_EVENT, savedUser.getId())

@@ -1,7 +1,6 @@
 package com.example.locationsystem.location;
 
 import com.example.locationsystem.aspect.GetAndValidUserId;
-import com.example.locationsystem.user.User;
 import com.example.locationsystem.user.UserService;
 import com.example.locationsystem.userAccess.UserAccess;
 import com.example.locationsystem.userAccess.UserAccessService;
@@ -47,7 +46,7 @@ public class LocationController {
         return locationService.findLocationByNameAndUserId(location.getName(), userId)
             .thenCompose(locExists -> {
                 if (locExists.isPresent()) {
-                    log.warn("Add location failed. Location with the same name already exists. Location name={}",
+                    log.warn("Add location failed. Location with that name already exists. Location name={}",
                         location.getName());
                     throw new AlreadyExistsException("Location with that name already exists");
                 }
@@ -58,7 +57,7 @@ public class LocationController {
 
     @GetAndValidUserId
     @GetMapping("/{locationId}/")
-    public CompletableFuture<ResponseEntity<List<User>>> showFriendsOnLocation(
+    public CompletableFuture<ResponseEntity<List<Long>>> showFriendsOnLocation(
         Long userId, @PathVariable Long locationId
     ) {
 
@@ -81,13 +80,14 @@ public class LocationController {
 
     @GetAndValidUserId
     @PutMapping("/change")
-    public CompletableFuture<ResponseEntity<UserAccess>> changeAccess(
+    public CompletableFuture<ResponseEntity<Void>> changeAccess(
         Long userId, @RequestBody UserAccess userAccess
     ) {
-        return userAccessService.changeUserAccess(userAccess, userId)
+
+        return userAccessService.findUserAccess(userAccess, userId)
+            .thenCompose(userAccessService::changeUserAccess)
             .thenApply(ResponseEntity::ok);
     }
-
 
     @GetAndValidUserId
     @DeleteMapping("/delete/{name}/")

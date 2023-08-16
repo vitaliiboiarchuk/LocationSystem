@@ -7,17 +7,15 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 
-
 class LocationServiceTest extends Specification {
-
-    LocationDao locationDao
-
-    LocationService locationService
-
-    ApplicationEventPublisher eventPublisher
 
     @Shared
     def loc = new Location(name: "name1", address: "add1", userId: 1L)
+
+    LocationDao locationDao
+    LocationService locationService
+    ApplicationEventPublisher eventPublisher
+
     List<Location> locs
 
     def setup() {
@@ -25,7 +23,7 @@ class LocationServiceTest extends Specification {
         locationDao = Mock(LocationDao)
         eventPublisher = Mock(ApplicationEventPublisher)
 
-        locationService = new LocationServiceImpl(locationDao,eventPublisher)
+        locationService = new LocationServiceImpl(locationDao, eventPublisher)
 
         locs = new ArrayList()
         locs << loc
@@ -56,11 +54,11 @@ class LocationServiceTest extends Specification {
             locationDao.findLocationByNameAndUserId(loc.getName(), 1) >> CompletableFuture.completedFuture(Optional.of(loc))
 
         when:
-            def result = locationService.findLocationByNameAndUserId(loc.getName(), 1)
+            def result = locationService.findLocationByNameAndUserId(loc.getName(), 1).join()
 
         then:
-            result.get().isPresent()
-            result.get().get().getName() == loc.getName()
+            result.isPresent()
+            result.get().getName() == loc.getName()
     }
 
     def "findAllUserLocations should return locations"() {
@@ -69,10 +67,10 @@ class LocationServiceTest extends Specification {
             locationDao.findAllUserLocations(1) >> CompletableFuture.completedFuture(locs)
 
         when:
-            def result = locationService.findAllUserLocations(1)
+            def result = locationService.findAllUserLocations(1).join()
 
         then:
-            result.get() == locs
+            result == locs
     }
 
     def "findLocationInUserLocations should return location"() {
@@ -81,16 +79,16 @@ class LocationServiceTest extends Specification {
             locationDao.findLocationInUserLocations(1, 1) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findLocationInUserLocations(1, 1)
+            def result = locationService.findLocationInUserLocations(1, 1).join()
 
         then:
-            result.get() == loc
+            result == loc
     }
 
     def "should delete location"() {
 
         when:
-            locationService.deleteLocation("name1", 1)
+            locationService.deleteLocation("name1", 1).join()
 
         then:
             1 * locationDao.findLocationByNameAndUserId("name1", 1) >> CompletableFuture.completedFuture(Optional.of(loc))
@@ -123,10 +121,10 @@ class LocationServiceTest extends Specification {
             locationDao.findNotSharedToUserLocation(1, 2, 2) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findNotSharedToUserLocation(1, 2, 2)
+            def result = locationService.findNotSharedToUserLocation(1, 2, 2).join()
 
         then:
-            result.get() == loc
+            result == loc
     }
 
     def "should find location by id"() {
@@ -135,9 +133,9 @@ class LocationServiceTest extends Specification {
             locationDao.findLocationById(loc.getId()) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findLocationById(loc.getId())
+            def result = locationService.findLocationById(loc.getId()).join()
 
         then:
-            result.get() == loc
+            result == loc
     }
 }

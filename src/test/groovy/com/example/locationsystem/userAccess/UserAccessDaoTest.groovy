@@ -3,24 +3,22 @@ package com.example.locationsystem.userAccess
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
+import spock.lang.Shared
 import spock.lang.Specification
-
-import javax.sql.DataSource
-import java.util.concurrent.CompletableFuture
 
 @SpringBootTest
 class UserAccessDaoTest extends Specification {
 
-    UserAccessDao userAccessDao
-    JdbcTemplate jdbcTemplate
+    @Shared
+    def access = new UserAccess(title: "ADMIN", userId: 100, locationId: 100)
 
     @Autowired
-    DataSource dataSource
+    UserAccessDao userAccessDao
+
+    @Autowired
+    JdbcTemplate jdbcTemplate
 
     def setup() {
-
-        jdbcTemplate = new JdbcTemplate(dataSource)
-        userAccessDao = new UserAccessDao(jdbcTemplate)
 
         jdbcTemplate.execute("INSERT INTO users(id, username, name, password) VALUES(100, 'user1', 'name1', 'pass1'), (200, 'user2', 'name2', 'pass2')")
         jdbcTemplate.execute("INSERT INTO locations(id, name, address, user_id) VALUES(100, 'name1', 'add1', 200)")
@@ -38,19 +36,15 @@ class UserAccessDaoTest extends Specification {
     def "should save user access"() {
 
         given:
-            def accessUserId = 600L
-            def locationId = 500L
             jdbcTemplate.execute("INSERT INTO users(id,username,password,name) VALUES(500,'user55','pass55','name55'),(600,'user56','pass56','name56')")
             jdbcTemplate.execute("INSERT INTO locations(id,name,address,user_id) VALUES(500,'loc56','add56',500)")
 
-            UserAccess userAccess = new UserAccess("Title11", accessUserId, locationId)
+            UserAccess userAccess = new UserAccess(title: "test", userId: 600L, locationId: 500L)
 
         when:
-            CompletableFuture<UserAccess> futureResult = userAccessDao.saveUserAccess(userAccess)
+            def savedAccess = userAccessDao.saveUserAccess(userAccess).join()
 
         then:
-            UserAccess savedAccess = futureResult.get()
-            savedAccess != null
             savedAccess.getTitle() == userAccess.getTitle()
             savedAccess.getLocationId() == userAccess.getLocationId()
             savedAccess.getUserId() == userAccess.getUserId()
@@ -64,13 +58,10 @@ class UserAccessDaoTest extends Specification {
 
     def "should find user access"() {
 
-        given:
-            def access = new UserAccess("ADMIN", 100, 100)
         when:
-            def result = userAccessDao.findUserAccess(access, 200)
+            def userAccess = userAccessDao.findUserAccess(access, 200).join()
 
         then:
-            UserAccess userAccess = result.get()
             userAccess.getTitle() == 'ADMIN'
             userAccess.getLocationId() == 100
             userAccess.getUserId() == 100
@@ -78,16 +69,11 @@ class UserAccessDaoTest extends Specification {
 
     def "should change user access"() {
 
-        given:
-            def access = new UserAccess("ADMIN", 100, 100)
-
         when:
-            def result = userAccessDao.changeUserAccess(access, 200)
+            userAccessDao.changeUserAccess(access).join()
 
         then:
-            UserAccess userAccess = result.get()
-            userAccess.getUserId() == 100
-            userAccess.getLocationId() == 100
+            def userAccess = userAccessDao.findUserAccess(access, 200).join()
             userAccess.getTitle() == "READ"
     }
 }

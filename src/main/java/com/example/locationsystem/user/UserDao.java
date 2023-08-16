@@ -35,8 +35,8 @@ public class UserDao {
         "password = ?";
     private static final String SAVE_USER = "INSERT INTO users (name,password,username) VALUES (?,?,?)";
     private static final String DELETE_USER_BY_EMAIL = "DELETE FROM users WHERE username = ?";
-    private static final String FIND_ALL_USERS_ON_LOCATION = "SELECT users.id,users.name,users.username,users" +
-        ".password FROM users JOIN accesses ON users.id = accesses.user_id WHERE accesses.location_id = ? AND users" +
+    private static final String FIND_ALL_USERS_ON_LOCATION = "SELECT users.id FROM users JOIN accesses ON users.id = " +
+        "accesses.user_id WHERE accesses.location_id = ? AND users" +
         ".id != ?";
     private static final String FIND_USER_BY_ID = "SELECT * FROM users WHERE id = ?";
 
@@ -66,22 +66,17 @@ public class UserDao {
         });
     }
 
-
     public CompletableFuture<Long> saveUser(User user) {
 
         return CompletableFuture.supplyAsync(() -> {
-
             String hashedPassword = jdbcTemplate.queryForObject("SELECT SHA2(?, 256)", String.class,
                 user.getPassword());
-
             try (Connection connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection()) {
-
                 PreparedStatement ps = connection.prepareStatement(SAVE_USER, Statement.RETURN_GENERATED_KEYS);
                 ps.setString(1, user.getName());
                 ps.setString(2, hashedPassword);
                 ps.setString(3, user.getUsername());
                 ps.executeUpdate();
-
                 ResultSet rs = ps.getGeneratedKeys();
                 if (rs.next()) {
                     user.setId(rs.getLong(1));
@@ -102,14 +97,14 @@ public class UserDao {
         });
     }
 
-    public CompletableFuture<List<User>> findAllUsersOnLocation(Long locationId, Long userId) {
+    public CompletableFuture<List<Long>> findAllUsersOnLocation(Long locationId, Long userId) {
 
         return CompletableFuture.supplyAsync(() -> {
-            List<User> users = jdbcTemplate.query(FIND_ALL_USERS_ON_LOCATION,
-                BeanPropertyRowMapper.newInstance(User.class), locationId, userId);
+            List<Long> userIds = jdbcTemplate.queryForList(FIND_ALL_USERS_ON_LOCATION,
+                Long.class, locationId, userId);
             log.info("Found all users with access on location by location id={} and user id={}",
                 locationId, userId);
-            return users;
+            return userIds;
         });
     }
 

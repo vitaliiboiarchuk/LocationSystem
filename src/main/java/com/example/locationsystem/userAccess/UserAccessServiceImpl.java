@@ -35,11 +35,19 @@ public class UserAccessServiceImpl implements UserAccessService {
     }
 
     @Override
-    public CompletableFuture<UserAccess> changeUserAccess(UserAccess userAccess, Long ownerId) {
+    public CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess, Long ownerId) {
+
+        log.info("Finding user access by location id={}, user id={}, owner id={}", userAccess.getLocationId(),
+            userAccess.getUserId(), ownerId);
+        return userAccessDao.findUserAccess(userAccess, ownerId);
+    }
+
+    @Override
+    public CompletableFuture<Void> changeUserAccess(UserAccess userAccess) {
 
         log.info("Changing user access by location id={}, user id={}",
             userAccess.getLocationId(), userAccess.getUserId());
-        return userAccessDao.changeUserAccess(userAccess, ownerId);
+        return userAccessDao.changeUserAccess(userAccess);
     }
 }
 

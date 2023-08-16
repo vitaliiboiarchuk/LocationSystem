@@ -12,7 +12,7 @@ public interface UserService {
 
     CompletableFuture<Long> saveUser(User user);
 
-    CompletableFuture<List<User>> findAllUsersOnLocation(Long locationId, Long userId);
+    CompletableFuture<List<Long>> findAllUsersOnLocation(Long locationId, Long userId);
 
     CompletableFuture<Void> deleteUserByEmail(String email);
 

@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CompletableFuture<List<User>> findAllUsersOnLocation(Long locationId, Long userId) {
+    public CompletableFuture<List<Long>> findAllUsersOnLocation(Long locationId, Long userId) {
 
         log.info("Finding all users with access on location by location id={} and user id={}",
             locationId, userId);

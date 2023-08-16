@@ -45,14 +45,14 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public CompletableFuture<ResponseEntity<User>> loginPost(@RequestBody User user, HttpServletResponse response) {
+    public CompletableFuture<ResponseEntity<Long>> loginPost(@RequestBody User user, HttpServletResponse response) {
 
         return userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword())
             .thenApply(existingUser -> {
                 Cookie cookie = new Cookie("user", existingUser.getId().toString());
                 cookie.setPath("/");
                 response.addCookie(cookie);
-                return ResponseEntity.ok(existingUser);
+                return ResponseEntity.ok(existingUser.getId());
             });
     }
 

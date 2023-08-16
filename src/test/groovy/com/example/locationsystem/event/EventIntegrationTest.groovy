@@ -9,10 +9,14 @@ import com.example.locationsystem.userAccess.UserAccessService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
+import spock.lang.Shared
 import spock.lang.Specification
 
 @SpringBootTest
 class EventIntegrationTest extends Specification {
+
+    @Shared
+    def user = new User(username: "test@gmail.com", name: "test", password: "pass")
 
     @Autowired
     UserService userService
@@ -26,17 +30,10 @@ class EventIntegrationTest extends Specification {
     @Autowired
     JdbcTemplate jdbcTemplate
 
-    User user
-
     private static final String DELETE_USER = "DELETE FROM users WHERE username = 'test@gmail.com';"
     private static final String DELETE_LOCATION = "DELETE FROM locations WHERE name = 'test';"
     private static final String DELETE_ACCESS = "DELETE FROM accesses WHERE title = 'test';"
     private static final String DELETE_EVENT = "DELETE FROM history WHERE object_id = ?;"
-
-    void setup() {
-
-        user = new User(username: "test@gmail.com", name: "test", password: "pass")
-    }
 
     def "should insert event into database when user is created"() {
 
