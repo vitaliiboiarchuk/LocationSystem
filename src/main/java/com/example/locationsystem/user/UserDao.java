@@ -84,7 +84,7 @@ public class UserDao {
                 log.info("User with email={} saved", emailUtil.hideEmail(user.getUsername()));
                 return user.getId();
             } catch (SQLException e) {
-                throw new RuntimeException("Failed to save user", e);
+                throw new UserSaveException("Failed to save user");
             }
         });
     }

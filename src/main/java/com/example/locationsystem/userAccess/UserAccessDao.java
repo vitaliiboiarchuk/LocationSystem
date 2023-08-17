@@ -48,7 +48,7 @@ public class UserAccessDao {
                 log.info("User access={} saved", userAccess);
                 return userAccess;
             } catch (SQLException e) {
-                throw new RuntimeException("Failed to save user access", e);
+                throw new UserAccessSaveException("Failed to save user access");
             }
         });
     }

@@ -101,7 +101,7 @@ public class LocationDao {
                 log.info("Location saved={}", location);
                 return location;
             } catch (SQLException e) {
-                throw new RuntimeException("Failed to save location", e);
+                throw new LocationSaveException("Failed to save location");
             }
         });
     }

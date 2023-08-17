@@ -57,4 +57,28 @@ public class ControllerExceptions {
             super(message);
         }
     }
+
+    public static class UserSaveException extends RuntimeException {
+
+        public UserSaveException(String message) {
+
+            super(message);
+        }
+    }
+
+    public static class LocationSaveException extends RuntimeException {
+
+        public LocationSaveException(String message) {
+
+            super(message);
+        }
+    }
+
+    public static class UserAccessSaveException extends RuntimeException {
+
+        public UserAccessSaveException(String message) {
+
+            super(message);
+        }
+    }
 }
