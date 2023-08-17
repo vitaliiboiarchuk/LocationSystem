@@ -1,26 +1,29 @@
 package com.example.locationsystem.location
 
+import com.example.locationsystem.exception.ControllerExceptions
+import org.springframework.context.ApplicationEventPublisher
+import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Subject
 
 import java.util.concurrent.CompletableFuture
 
 class LocationServiceTest extends Specification {
 
+    @Shared
+    def loc = new Location(name: "name1", address: "add1", userId: 1L)
+
     LocationDao locationDao
-
-    @Subject
     LocationService locationService
+    ApplicationEventPublisher eventPublisher
 
-    Location loc
     List<Location> locs
 
     def setup() {
 
         locationDao = Mock(LocationDao)
-        locationService = new LocationServiceImpl(locationDao)
+        eventPublisher = Mock(ApplicationEventPublisher)
 
-        loc = new Location("name1", "add1", 1L)
+        locationService = new LocationServiceImpl(locationDao, eventPublisher)
 
         locs = new ArrayList()
         locs << loc
@@ -29,28 +32,33 @@ class LocationServiceTest extends Specification {
     def "saveLocation should insert location into database"() {
 
         given:
-            locationDao.saveLocation(loc) >> CompletableFuture.completedFuture(null)
+            def locationToSave = Stub(Location)
+
+        and:
+            def expectedLocation = Stub(Location)
 
         when:
-            def result = locationService.saveLocation(loc, 1L)
+            def result = locationService.saveLocation(locationToSave, 100L).join()
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
-            1 * locationDao.saveLocation(loc)
+            result == expectedLocation
+
+        then:
+            1 * locationDao.saveLocation(locationToSave) >> CompletableFuture.completedFuture(expectedLocation)
+            1 * eventPublisher.publishEvent(_) >> null
     }
 
     def "findLocationByNameAndUserId should return location"() {
 
         given:
-            locationDao.findLocationByNameAndUserId(loc.getName(), 1) >> CompletableFuture.completedFuture(loc)
+            locationDao.findLocationByNameAndUserId(loc.getName(), 1) >> CompletableFuture.completedFuture(Optional.of(loc))
 
         when:
-            def result = locationService.findLocationByNameAndUserId(loc.getName(), 1)
+            def result = locationService.findLocationByNameAndUserId(loc.getName(), 1).join()
 
         then:
-            def location = result.get()
-            location == loc
+            result.isPresent()
+            result.get().getName() == loc.getName()
     }
 
     def "findAllUserLocations should return locations"() {
@@ -59,11 +67,10 @@ class LocationServiceTest extends Specification {
             locationDao.findAllUserLocations(1) >> CompletableFuture.completedFuture(locs)
 
         when:
-            def result = locationService.findAllUserLocations(1)
+            def result = locationService.findAllUserLocations(1).join()
 
         then:
-            def locsList = result.get()
-            locsList == locs
+            result == locs
     }
 
     def "findLocationInUserLocations should return location"() {
@@ -72,25 +79,40 @@ class LocationServiceTest extends Specification {
             locationDao.findLocationInUserLocations(1, 1) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findLocationInUserLocations(1, 1)
+            def result = locationService.findLocationInUserLocations(1, 1).join()
 
         then:
-            def location = result.get()
-            location == loc
+            result == loc
     }
 
     def "should delete location"() {
 
-        given:
-            locationDao.deleteLocation(loc.getId(), 1) >> CompletableFuture.completedFuture(null)
-
         when:
-            def result = locationService.deleteLocation(loc.getId(), 1)
+            locationService.deleteLocation("name1", 1).join()
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
-            1 * locationDao.deleteLocation(loc.getId(), 1)
+            1 * locationDao.findLocationByNameAndUserId("name1", 1) >> CompletableFuture.completedFuture(Optional.of(loc))
+            1 * locationDao.deleteLocation("name1", 1) >> CompletableFuture.completedFuture(null)
+            1 * eventPublisher.publishEvent(_) >> null
+    }
+
+    def "should throw LocationNotFoundException when location not found"() {
+
+        when:
+            CompletableFuture<Void> result = locationService.deleteLocation("name", 100)
+
+        then:
+            1 * locationDao.findLocationByNameAndUserId("name", 100) >> CompletableFuture.completedFuture(Optional.empty())
+            0 * locationDao.deleteLocation("name", 100)
+            0 * eventPublisher.publishEvent(_)
+
+        and:
+            try {
+                result.get()
+            } catch (Exception e) {
+                Throwable cause = e.getCause()
+                cause instanceof ControllerExceptions.LocationNotFoundException
+            }
     }
 
     def "should find not shared locations to user"() {
@@ -99,11 +121,10 @@ class LocationServiceTest extends Specification {
             locationDao.findNotSharedToUserLocation(1, 2, 2) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findNotSharedToUserLocation(1, 2, 2)
+            def result = locationService.findNotSharedToUserLocation(1, 2, 2).join()
 
         then:
-            def location = result.get()
-            location == loc
+            result == loc
     }
 
     def "should find location by id"() {
@@ -112,10 +133,9 @@ class LocationServiceTest extends Specification {
             locationDao.findLocationById(loc.getId()) >> CompletableFuture.completedFuture(loc)
 
         when:
-            def result = locationService.findLocationById(loc.getId())
+            def result = locationService.findLocationById(loc.getId()).join()
 
         then:
-            def location = result.get()
-            loc == location
+            result == loc
     }
 }

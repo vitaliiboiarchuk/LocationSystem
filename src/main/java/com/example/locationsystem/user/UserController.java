@@ -1,6 +1,9 @@
 package com.example.locationsystem.user;
 
+import com.example.locationsystem.util.EmailUtil;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,41 +23,36 @@ import com.example.locationsystem.exception.ControllerExceptions.*;
 @RestController
 @Log4j2
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
 
-    private final UserService userService;
+    UserService userService;
+    EmailUtil emailUtil;
 
     @PostMapping("/registration")
-    public CompletableFuture<ResponseEntity<User>> registerPost(@Valid @RequestBody User user) {
+    public CompletableFuture<ResponseEntity<Long>> registerPost(@Valid @RequestBody User user) {
 
         return userService.findUserByEmail(user.getUsername())
             .thenCompose(existingUser -> {
-                if (existingUser != null) {
-                    log.warn("Registration failed. User {} already exists", user.getUsername());
+                if (existingUser.isPresent()) {
+                    log.warn("Registration failed. User with email={} already exists",
+                        emailUtil.hideEmail(user.getUsername()));
                     throw new AlreadyExistsException("User already exists");
                 }
                 return userService.saveUser(user)
-                    .thenApply(savedUser -> {
-                        log.info("Registration successful for user {}", user.getUsername());
-                        return ResponseEntity.ok(savedUser);
-                    });
+                    .thenApply(ResponseEntity::ok);
             });
     }
 
     @PostMapping("/login")
-    public CompletableFuture<ResponseEntity<User>> loginPost(@RequestBody User user, HttpServletResponse response) {
+    public CompletableFuture<ResponseEntity<Long>> loginPost(@RequestBody User user, HttpServletResponse response) {
 
         return userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword())
             .thenApply(existingUser -> {
-                if (existingUser == null) {
-                    log.warn("Login failed. Invalid login or password");
-                    throw new InvalidLoginOrPasswordException("Invalid login or password");
-                }
                 Cookie cookie = new Cookie("user", existingUser.getId().toString());
                 cookie.setPath("/");
                 response.addCookie(cookie);
-                log.info("Login successful for user={}", user.getUsername());
-                return ResponseEntity.ok(existingUser);
+                return ResponseEntity.ok(existingUser.getId());
             });
     }
 
@@ -62,9 +60,6 @@ public class UserController {
     public CompletableFuture<ResponseEntity<Void>> deleteUser(@PathVariable String email) {
 
         return userService.deleteUserByEmail(email)
-            .thenApply(deleted -> {
-                log.info("User deleted successfully. User username={}", email);
-                return ResponseEntity.ok().build();
-            });
+            .thenApply(deleted -> ResponseEntity.ok().build());
     }
 }

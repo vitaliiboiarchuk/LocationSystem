@@ -1,4 +1,4 @@
-CREATE TABLE users
+CREATE TABLE IF NOT EXISTS users
 (
     id       INT AUTO_INCREMENT,
     name     VARCHAR(255),
@@ -7,7 +7,7 @@ CREATE TABLE users
     PRIMARY KEY (id)
 );
 
-CREATE TABLE locations
+CREATE TABLE IF NOT EXISTS locations
 (
     id      INT AUTO_INCREMENT,
     name    VARCHAR(255),
@@ -17,7 +17,7 @@ CREATE TABLE locations
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
-CREATE TABLE accesses
+CREATE TABLE IF NOT EXISTS accesses
 (
     id          INT AUTO_INCREMENT,
     title       VARCHAR(255),
@@ -28,4 +28,13 @@ CREATE TABLE accesses
         ON DELETE CASCADE,
     FOREIGN KEY (location_id) REFERENCES locations (id)
         ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS history
+(
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    object_type VARCHAR(50),
+    action_type VARCHAR(50),
+    event_time     TIMESTAMP,
+    object_id INT
 );

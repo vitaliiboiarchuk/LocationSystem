@@ -1,67 +1,64 @@
 package com.example.locationsystem.userAccess
 
+import org.springframework.context.ApplicationEventPublisher
+import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Subject
 
 import java.util.concurrent.CompletableFuture
 
 class UserAccessServiceTest extends Specification {
 
+    @Shared
+    def userAccess = new UserAccess(id: 100L, title: "ADMIN", userId: 1L, locationId: 2L)
+
     UserAccessDao userAccessDao
-
-    @Subject
     UserAccessService userAccessService
-
-    UserAccess userAccess
+    ApplicationEventPublisher eventPublisher
 
     def setup() {
 
         userAccessDao = Mock(UserAccessDao)
-        userAccessService = new UserAccessServiceImpl(userAccessDao)
-
-        userAccess = new UserAccess("ADMIN", 1, 2)
+        eventPublisher = Mock(ApplicationEventPublisher)
+        userAccessService = new UserAccessServiceImpl(userAccessDao, eventPublisher)
     }
 
     def "should insert user access into database"() {
 
         given:
-            userAccessDao.saveUserAccess(userAccess) >> CompletableFuture.completedFuture(null)
+            def userAccessToSave = Stub(UserAccess)
+
+        and:
+            def expectedUserAccess = Stub(UserAccess)
 
         when:
-            def result = userAccessService.saveUserAccess(userAccess)
+            def result = userAccessService.saveUserAccess(userAccessToSave).join()
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
+            result == expectedUserAccess
 
-            1 * userAccessDao.saveUserAccess(userAccess)
+        then:
+            1 * userAccessDao.saveUserAccess(userAccessToSave) >> CompletableFuture.completedFuture(expectedUserAccess)
+            1 * eventPublisher.publishEvent(_) >> null
     }
 
     def "should find user access"() {
 
         given:
-            userAccessDao.findUserAccess(userAccess) >> CompletableFuture.completedFuture(userAccess)
+            userAccessDao.findUserAccess(userAccess, 1L) >> CompletableFuture.completedFuture(userAccess)
 
         when:
-            def result = userAccessService.findUserAccess(userAccess)
+            def result = userAccessService.findUserAccess(userAccess, 1L).join()
 
         then:
-            UserAccess access = result.get()
-            access.getTitle() == 'ADMIN'
+            result == userAccess
     }
 
     def "should change user access"() {
 
-        given:
-            userAccessDao.changeUserAccess(userAccess) >> CompletableFuture.completedFuture(null)
-
         when:
-            def result = userAccessService.changeUserAccess(userAccess)
+            userAccessService.changeUserAccess(userAccess)
 
         then:
-            def saveResult = result?.get()
-            saveResult == null
-
-            1 * userAccessDao.changeUserAccess(userAccess)
+            1 * userAccessDao.changeUserAccess(userAccess) >> CompletableFuture.completedFuture(userAccess)
     }
 }

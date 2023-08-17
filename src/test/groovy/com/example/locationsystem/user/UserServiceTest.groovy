@@ -1,66 +1,116 @@
 package com.example.locationsystem.user
 
+import com.example.locationsystem.exception.ControllerExceptions
+import com.example.locationsystem.util.EmailUtil
+import org.springframework.context.ApplicationEventPublisher
+import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Subject
 
 import java.util.concurrent.CompletableFuture
 
 class UserServiceTest extends Specification {
 
+    @Shared
+    def user = new User(id: 100L, username: "user1@gmail.com", name: "name1", password: "pass1")
+
     UserDao userDao
-
-    @Subject
     UserService userService
-
-    User user
+    EmailUtil emailUtil
+    ApplicationEventPublisher eventPublisher
 
     def setup() {
 
         userDao = Mock(UserDao)
-        userService = new UserServiceImpl(userDao)
-
-        user = new User("user1", "name1", "pass1")
-        user.setId(1L)
+        emailUtil = Mock(EmailUtil)
+        eventPublisher = Mock(ApplicationEventPublisher)
+        userService = new UserServiceImpl(userDao, emailUtil, eventPublisher)
     }
 
-    def "findByEmail should return User"() {
+    def "saveUser should insert user into database"() {
 
         given:
-            userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(user)
+            def userToSave = Stub(User)
+
+        and:
+            def expectedUser = Stub(User)
 
         when:
-            def result = userService.findUserByEmail(user.getUsername())
+            def savedUserId = userService.saveUser(userToSave).join()
 
         then:
-            def user = result.get()
-            user == this.user
+            savedUserId == expectedUser.getId()
+
+        then:
+            1 * userDao.saveUser(userToSave) >> CompletableFuture.completedFuture(expectedUser.getId())
+            1 * eventPublisher.publishEvent(_) >> null
     }
 
-    def "findByEmailAndPassword should return User"() {
+    def "findUserByEmail should return User"() {
+
+        given:
+            userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
+
+        when:
+            def result = userService.findUserByEmail(user.getUsername()).join()
+
+        then:
+            result.isPresent()
+            result.get().getUsername() == user.getUsername()
+    }
+
+    def "findUserByEmailAndPassword should return User"() {
 
         given:
             userDao.findUserByEmailAndPassword(user.getUsername(), user.getPassword()) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword())
+            def result = userService.findUserByEmailAndPassword(user.getUsername(), user.getPassword()).join()
 
         then:
-            def user = result.get()
-            user == this.user
+            result == user
     }
 
-    def "saveUser should insert User into database"() {
+    def "findAllUsersWithAccessOnLocation should return Users"() {
 
         given:
-            userDao.saveUser(user) >> CompletableFuture.completedFuture(null)
+            def accessUsers = [100L]
+            userDao.findAllUsersOnLocation(1L, user.getId()) >> CompletableFuture.completedFuture(accessUsers)
 
         when:
-            def result = userService.saveUser(user)
+            def userIds = userService.findAllUsersOnLocation(1L, user.getId()).join()
 
         then:
-            def savedUser = result?.get()
-            savedUser == null
-            1 * userDao.saveUser(user)
+            userIds == accessUsers
+    }
+
+    def "deleteUserByEmail should delete user and publish an event if the user exists"() {
+
+        when:
+            userService.deleteUserByEmail(user.getUsername()).join()
+
+        then:
+            1 * userDao.findUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(Optional.of(user))
+            1 * userDao.deleteUserByEmail(user.getUsername()) >> CompletableFuture.completedFuture(null)
+            1 * eventPublisher.publishEvent(_) >> null
+    }
+
+    def "should throw UserNotFoundException when user not found"() {
+
+        when:
+            def result = userService.deleteUserByEmail("test")
+
+        then:
+            1 * userDao.findUserByEmail("test") >> CompletableFuture.completedFuture(Optional.empty())
+            0 * userDao.deleteUserByEmail("test")
+            0 * eventPublisher.publishEvent(_)
+
+        and:
+            try {
+                result.get()
+            } catch (Exception e) {
+                Throwable cause = e.getCause()
+                cause instanceof ControllerExceptions.UserNotFoundException
+            }
     }
 
     def "findById should return User"() {
@@ -69,51 +119,9 @@ class UserServiceTest extends Specification {
             userDao.findUserById(user.getId()) >> CompletableFuture.completedFuture(user)
 
         when:
-            def result = userService.findUserById(user.getId())
+            def result = userService.findUserById(user.getId()).join()
 
         then:
-            def user = result.get()
-            user == this.user
-    }
-
-    def "findAllUsersWithAccessOnLocation should return Users"() {
-
-        given:
-            def accessUser = new User("name", "name", "pass")
-            def accessUsers = [accessUser]
-            userDao.findAllUsersOnLocation(1L, user.getId()) >> CompletableFuture.completedFuture(accessUsers)
-
-        when:
-            def result = userService.findAllUsersOnLocation(1L, user.getId())
-
-        then:
-            def users = result.get()
-            users == accessUsers
-    }
-
-    def "should return owner if owner is found"() {
-
-        given:
-            userDao.findLocationOwner(1L) >> CompletableFuture.completedFuture(user)
-
-        when:
-            def result = userService.findLocationOwner(1L)
-
-        then:
-            result.get() == user
-    }
-
-    def "should delete user"() {
-
-        given:
-            userDao.deleteUserByEmail("test@gmail.com") >> CompletableFuture.completedFuture(null)
-
-        when:
-            def result = userService.deleteUserByEmail("test@gmail.com")
-
-        then:
-            def saveResult = result?.get()
-            saveResult == null
-            1 * userDao.deleteUserByEmail("test@gmail.com")
+            result == user
     }
 }

@@ -6,7 +6,7 @@ public interface UserAccessService {
 
     CompletableFuture<UserAccess> saveUserAccess(UserAccess userAccess);
 
-    CompletableFuture<Void> changeUserAccess(UserAccess userAccess);
+    CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess, Long ownerId);
 
-    CompletableFuture<UserAccess> findUserAccess(UserAccess userAccess);
+    CompletableFuture<Void> changeUserAccess(UserAccess userAccess);
 }

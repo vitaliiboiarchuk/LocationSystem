@@ -18,17 +18,25 @@ public class ControllerExceptions {
         }
     }
 
-    public static class LocationOwnerNotFoundException extends RuntimeException {
+    public static class LocationNotFoundException extends RuntimeException {
 
-        public LocationOwnerNotFoundException(String message) {
+        public LocationNotFoundException(String message) {
 
             super(message);
         }
     }
 
-    public static class LocationNotFoundException extends RuntimeException {
+    public static class UserNotFoundException extends RuntimeException {
 
-        public LocationNotFoundException(String message) {
+        public UserNotFoundException(String message) {
+
+            super(message);
+        }
+    }
+
+    public static class LocationOrUserNotFoundException extends RuntimeException {
+
+        public LocationOrUserNotFoundException(String message) {
 
             super(message);
         }
@@ -42,25 +50,33 @@ public class ControllerExceptions {
         }
     }
 
-    public static class NoUserToShareException extends RuntimeException {
-
-        public NoUserToShareException(String message) {
-
-            super(message);
-        }
-    }
-
-    public static class SelfShareException extends RuntimeException {
-
-        public SelfShareException(String message) {
-
-            super(message);
-        }
-    }
-
     public static class NotLoggedInException extends RuntimeException {
 
         public NotLoggedInException(String message) {
+
+            super(message);
+        }
+    }
+
+    public static class UserSaveException extends RuntimeException {
+
+        public UserSaveException(String message) {
+
+            super(message);
+        }
+    }
+
+    public static class LocationSaveException extends RuntimeException {
+
+        public LocationSaveException(String message) {
+
+            super(message);
+        }
+    }
+
+    public static class UserAccessSaveException extends RuntimeException {
+
+        public UserAccessSaveException(String message) {
 
             super(message);
         }
